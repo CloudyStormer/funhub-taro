@@ -1,0 +1,103 @@
+.section {
+  padding: 8px 24px;
+}
+
+.sectionTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: bold;
+  color: rgb(15, 23, 42);
+  margin: 0;
+  flex: 1;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.refreshBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgb(226, 232, 240);
+  background: rgb(255, 255, 255);
+  color: rgb(100, 116, 139);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+
+  &:hover {
+    background: rgb(238, 242, 255);
+    color: rgb(79, 70, 229);
+    border-color: rgb(199, 210, 254);
+  }
+
+  &.spinning svg {
+    animation: spin 0.5s ease-in-out;
+  }
+}
+
+.scenarioGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.scenarioCard {
+  background-color: rgb(255, 255, 255);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgb(226, 232, 240);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: transform 0.2s;
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.scenarioIconWrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.purple {
+    background-color: rgb(238, 242, 255);
+    color: rgb(79, 70, 229);
+  }
+
+  &.green {
+    background-color: rgb(240, 253, 244);
+    color: rgb(22, 163, 74);
+  }
+
+  &.orange {
+    background-color: rgb(255, 247, 237);
+    color: rgb(234, 88, 12);
+  }
+}
+
+.scenarioCardTitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgb(71, 85, 105);
+  margin: 0;
+}

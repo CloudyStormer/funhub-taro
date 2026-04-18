@@ -1,0 +1,155 @@
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.section {
+  padding: 8px 24px;
+}
+
+.greetingBox {
+  margin-bottom: 24px;
+  margin-top: 16px;
+}
+
+.greetingRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 4px;
+}
+
+.greetingTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: rgb(15, 23, 42);
+  margin: 0;
+}
+
+@keyframes shimmer {
+  0%   { transform: translateX(-120%) skewX(-15deg); }
+  100% { transform: translateX(320%) skewX(-15deg); }
+}
+
+.proBadge {
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(to right, rgb(15, 23, 42), rgb(51, 65, 85));
+  padding: 4px 10px;
+  border-radius: 4px;
+  color: rgb(255, 255, 255);
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  border: 1px solid rgb(71, 85, 105);
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: -20%;
+    left: 0;
+    width: 30%;
+    height: 140%;
+    background: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.35) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    animation: shimmer 2s ease-in-out infinite;
+    pointer-events: none;
+  }
+}
+
+.pulseDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: rgb(250, 204, 21);
+  margin-right: 6px;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.streakText {
+  color: rgb(100, 116, 139);
+  font-size: 14px;
+  margin: 0;
+}
+
+.streakHighlight {
+  font-weight: bold;
+  color: rgb(15, 23, 42);
+}
+
+.progressCard {
+  background-color: rgb(255, 255, 255);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgb(226, 232, 240);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+
+.progressLabel {
+  color: rgb(71, 85, 105);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.progressValue {
+  color: rgb(15, 23, 42);
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.progressBarWrapper {
+  height: 8px;
+  width: 100%;
+  background-color: rgb(241, 245, 249);
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.progressBarFill {
+  height: 100%;
+  width: var(--progress, 0%);
+  background-color: rgb(79, 70, 229);
+  border-radius: 9999px;
+  transition: width 1s ease-out;
+}
+
+.primaryBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: rgb(15, 23, 42);
+  color: rgb(255, 255, 255);
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: rgb(51, 65, 85);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}

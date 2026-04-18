@@ -1,0 +1,14 @@
+.wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dot {
+  border-radius: 50%;
+  background: rgba(220, 220, 235, 1);
+
+  &.done {
+    background: rgba(99, 82, 230, 1);
+  }
+}

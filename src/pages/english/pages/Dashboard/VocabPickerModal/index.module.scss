@@ -1,0 +1,271 @@
+/* ── 遮罩 ── */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(20, 20, 30, 0);
+  pointer-events: none;
+  transition: background 0.3s;
+  border-radius: inherit;
+
+  &.overlayVisible {
+    background: rgba(20, 20, 30, 0.45);
+    pointer-events: auto;
+  }
+}
+
+/* ── 底部抽屉 ── */
+.sheet {
+  width: 100%;
+  background: rgba(255, 255, 255, 1);
+  border-radius: 24px 24px 0 0;
+  padding: 0 0 32px;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1),
+              max-height 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  max-height: 82%;
+  overflow-y: auto;
+
+  &.sheetVisible {
+    transform: translateY(0);
+  }
+
+  &.sheetFull {
+    max-height: 96%;
+  }
+}
+
+/* ── 拖拽条 ── */
+.handleRow {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 4px;
+}
+
+.handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(220, 220, 235, 1);
+}
+
+/* ── 头部 ── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 12px 20px 16px;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sparkle {
+  color: rgba(99, 82, 230, 1);
+}
+
+.titleText {
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(20, 20, 30, 1);
+}
+
+.titleHighlight {
+  color: rgba(99, 82, 230, 1);
+  font-weight: 800;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: rgba(140, 140, 160, 1);
+  margin: 0;
+}
+
+.closeBtn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background: rgba(245, 245, 250, 1);
+  color: rgba(140, 140, 160, 1);
+  cursor: pointer;
+  margin-top: 2px;
+  flex-shrink: 0;
+  outline: none;
+
+  &:active { opacity: 0.7; }
+}
+
+.backBtn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background: rgba(236, 233, 255, 1);
+  color: rgba(99, 82, 230, 1);
+  cursor: pointer;
+  outline: none;
+  flex-shrink: 0;
+
+  &:active { opacity: 0.7; }
+}
+
+/* ── 分组标题 ── */
+.groupLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(140, 140, 160, 1);
+  padding: 8px 20px 4px;
+  margin: 0;
+}
+
+/* ── 选项列表 ── */
+.optionList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 20px;
+}
+
+.optionCard {
+  width: 100%;
+  text-align: left;
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  border: 1.5px solid rgba(230, 230, 240, 1);
+  background: rgba(255, 255, 255, 1);
+  outline: none;
+  transition: transform 0.15s;
+
+  &:active { transform: scale(0.98); }
+
+  &.highlight {
+    border-color: rgba(99, 82, 230, 0.35);
+    background: rgba(250, 249, 255, 1);
+  }
+}
+
+/* ── 图标框 ── */
+.iconBox {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+
+  &.purple { background: rgba(236, 233, 255, 1); color: rgba(99, 82, 230, 1); }
+  &.green  { background: rgba(220, 255, 238, 1); color: rgba(34, 180, 100, 1); }
+  &.orange { background: rgba(255, 237, 220, 1); color: rgba(255, 140, 60, 1); }
+  &.blue   { background: rgba(219, 234, 254, 1); color: rgba(37, 99, 235, 1); }
+  &.red    { background: rgba(254, 226, 226, 1); color: rgba(220, 38, 38, 1); }
+  &.yellow { background: rgba(254, 249, 195, 1); color: rgba(202, 138, 4, 1); }
+  &.teal   { background: rgba(204, 251, 241, 1); color: rgba(13, 148, 136, 1); }
+  &.indigo { background: rgba(224, 231, 255, 1); color: rgba(79, 70, 229, 1); }
+}
+
+/* ── 选项内容 ── */
+.optionBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.optionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(20, 20, 30, 1);
+  margin: 0 0 3px;
+}
+
+.optionSubtitle {
+  font-size: 12px;
+  color: rgba(140, 140, 160, 1);
+  margin: 0 0 7px;
+}
+
+.tagRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.arrow {
+  font-size: 12px;
+  color: rgba(140, 140, 160, 1);
+}
+
+.tag {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 20px;
+
+  &.purple { background: rgba(236, 233, 255, 1); color: rgba(99, 82, 230, 1); }
+  &.green  { background: rgba(220, 255, 238, 1); color: rgba(34, 180, 100, 1); }
+  &.orange { background: rgba(255, 237, 220, 1); color: rgba(255, 140, 60, 1); }
+  &.blue   { background: rgba(219, 234, 254, 1); color: rgba(37, 99, 235, 1); }
+  &.red    { background: rgba(254, 226, 226, 1); color: rgba(220, 38, 38, 1); }
+  &.yellow { background: rgba(254, 249, 195, 1); color: rgba(202, 138, 4, 1); }
+  &.teal   { background: rgba(204, 251, 241, 1); color: rgba(13, 148, 136, 1); }
+  &.indigo { background: rgba(224, 231, 255, 1); color: rgba(79, 70, 229, 1); }
+}
+
+.chevron {
+  color: rgba(200, 200, 220, 1);
+  flex-shrink: 0;
+  margin-top: 10px;
+
+  &.checkIcon {
+    color: rgba(99, 82, 230, 1);
+    margin-top: 10px;
+  }
+}
+
+/* ── 底部 ── */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 20px 0;
+}
+
+.moreLink {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(99, 82, 230, 1);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.footerSpace {
+  height: 8px;
+}

@@ -1,0 +1,34 @@
+.summary {
+  margin: 0 20px 16px;
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: rgba(236, 233, 255, 1);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fireIcon {
+  color: rgba(255, 140, 60, 1);
+}
+
+.purpleIcon {
+  color: rgba(99, 82, 230, 1);
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(99, 82, 230, 1);
+}
+
+.value {
+  font-size: 12px;
+  color: rgba(60, 60, 80, 1);
+}

@@ -1,0 +1,97 @@
+.card {
+  background: rgba(255, 255, 255, 1);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.timeCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 38px;
+}
+
+.timeText {
+  font-size: 12px;
+  font-weight: bold;
+  color: rgba(99, 82, 230, 1);
+}
+
+.timeLine {
+  margin-top: 4px;
+  flex: 1;
+  width: 1px;
+  min-height: 20px;
+  background: rgba(220, 215, 255, 1);
+}
+
+.content {
+  flex: 1;
+}
+
+.taskTitle {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: rgba(20, 20, 30, 1);
+
+  &.done {
+    color: rgba(180, 180, 200, 1);
+    text-decoration: line-through;
+  }
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.metaIcon {
+  color: rgba(140, 140, 160, 1);
+}
+
+.duration {
+  font-size: 12px;
+  color: rgba(140, 140, 160, 1);
+}
+
+.tag {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+
+  &.purple {
+    background: rgba(236, 233, 255, 1);
+    color: rgba(99, 82, 230, 1);
+  }
+
+  &.green {
+    background: rgba(220, 255, 238, 1);
+    color: rgba(34, 180, 100, 1);
+  }
+
+  &.orange {
+    background: rgba(255, 237, 220, 1);
+    color: rgba(255, 140, 60, 1);
+  }
+}
+
+.status {
+  flex-shrink: 0;
+}
+
+.checkIcon {
+  color: rgba(99, 82, 230, 1);
+}
+
+.emptyCircle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(200, 200, 220, 1);
+}

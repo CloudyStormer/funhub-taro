@@ -1,0 +1,26 @@
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  margin-bottom: 12px;
+}
+
+.navBtn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: rgba(230, 230, 240, 1);
+  color: rgba(99, 82, 230, 1);
+}
+
+.navTitle {
+  font-weight: bold;
+  font-size: 16px;
+  color: rgba(20, 20, 30, 1);
+}

@@ -1,0 +1,158 @@
+.weekNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  margin-bottom: 12px;
+}
+
+.navBtn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: rgba(230, 230, 240, 1);
+  color: rgba(99, 82, 230, 1);
+}
+
+.navLabel {
+  font-weight: bold;
+  font-size: 14px;
+  color: rgba(20, 20, 30, 1);
+}
+
+.statsBar {
+  margin: 0 20px 16px;
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: rgba(236, 233, 255, 1);
+}
+
+.statItem {
+  text-align: center;
+}
+
+.statValue {
+  font-size: 16px;
+  font-weight: bold;
+  color: rgba(99, 82, 230, 1);
+  margin: 0;
+}
+
+.statLabel {
+  font-size: 12px;
+  color: rgba(140, 140, 160, 1);
+  margin: 0;
+}
+
+.statsDivider {
+  width: 1px;
+  height: 28px;
+  background: rgba(210, 205, 255, 1);
+}
+
+.dayColumns {
+  padding: 0 20px;
+  margin-bottom: 16px;
+}
+
+.daysRow {
+  display: flex;
+  gap: 6px;
+}
+
+.dayCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.dayLabel {
+  font-size: 12px;
+  color: rgba(140, 140, 160, 1);
+}
+
+.barContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 64px;
+}
+
+.bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s ease;
+
+  &.barDone {
+    height: var(--bar-height, 8px);
+    min-height: 8px;
+    background: rgba(180, 168, 255, 1);
+  }
+
+  &.barSelected {
+    height: var(--bar-height, 8px);
+    min-height: 8px;
+    background: rgba(99, 82, 230, 1);
+  }
+
+  &.barEmpty {
+    height: 0;
+    background: rgba(230, 230, 240, 1);
+  }
+}
+
+.dateCircle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  background: transparent;
+  color: rgba(60, 60, 80, 1);
+
+  &.selected {
+    background: rgba(99, 82, 230, 1);
+    color: rgba(255, 255, 255, 1);
+  }
+
+  &.today {
+    background: rgba(236, 233, 255, 1);
+    color: rgba(99, 82, 230, 1);
+  }
+}
+
+.tasksArea {
+  padding: 0 20px;
+}
+
+.tasksHeading {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(20, 20, 30, 1);
+  margin: 0 0 12px 0;
+}
+
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
