@@ -1,0 +1,47 @@
+// ---- Global page background ----
+page {
+  background-color: rgba(253, 250, 245, 1);
+  color: rgba(60, 45, 30, 1);
+  font-family: sans-serif;
+}
+
+// ---- Logo drop-bounce ----
+@keyframes logo-drop-bounce {
+  0%   { transform: translateY(-60px); animation-timing-function: ease-in; }
+  22%  { transform: translateY(0px);   animation-timing-function: ease-out; }
+  34%  { transform: translateY(-28px); animation-timing-function: ease-in; }
+  46%  { transform: translateY(0px);   animation-timing-function: ease-out; }
+  54%  { transform: translateY(-12px); animation-timing-function: ease-in; }
+  62%  { transform: translateY(0px);   animation-timing-function: ease-out; }
+  67%  { transform: translateY(-4px);  animation-timing-function: ease-in; }
+  72%  { transform: translateY(0px); }
+  100% { transform: translateY(0px); }
+}
+
+.logo-drop-bounce {
+  animation: logo-drop-bounce 2.8s ease-in-out 1;
+}
+
+// ---- Featured card glow (teal — 职场英语) ----
+@keyframes glow-breathe-teal {
+  0%, 100% {
+    box-shadow: 0 0 3px 0 rgba(79, 161, 152, 0.35),
+                0 0 12px 3px rgba(79, 161, 152, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 8px 2px rgba(79, 161, 152, 0.45),
+                0 0 18px 4px rgba(79, 161, 152, 0.25);
+  }
+}
+
+// ---- Featured card glow (pink — 糖果彩绘) ----
+@keyframes glow-breathe-pink {
+  0%, 100% {
+    box-shadow: 0 0 3px 0 rgba(240, 110, 130, 0.35),
+                0 0 12px 3px rgba(240, 110, 130, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 8px 2px rgba(240, 110, 130, 0.45),
+                0 0 18px 4px rgba(240, 110, 130, 0.25);
+  }
+}

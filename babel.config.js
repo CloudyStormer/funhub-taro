@@ -7,5 +7,10 @@ module.exports = {
       ts: false,
       compiler: 'vite',
     }]
+  ],
+  plugins: [
+    ['@babel/plugin-transform-react-jsx', {
+      runtime: 'classic',
+    }]
   ]
 }

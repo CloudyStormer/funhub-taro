@@ -1,0 +1,135 @@
+.module-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 32px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 24px rgba(200, 180, 160, 0.15);
+  backdrop-filter: blur(12px);
+  box-sizing: border-box;
+
+  &--construction {
+    background: rgba(220, 218, 215, 0.45);
+    filter: grayscale(1);
+    opacity: 0.75;
+  }
+
+  &--featured {
+    border-width: 2.5px;
+    border-style: solid;
+  }
+
+  &--glow-teal {
+    animation: glow-breathe-teal 2.4s ease-in-out infinite;
+  }
+
+  &--glow-pink {
+    animation: glow-breathe-pink 2.4s ease-in-out infinite;
+  }
+
+  &__badge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+    &-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: white;
+    }
+
+    &-text {
+      font-size: 11px;
+      font-weight: bold;
+      color: white;
+      letter-spacing: 0.1em;
+    }
+  }
+
+  &__deco {
+    position: absolute;
+    right: -4px;
+    top: -4px;
+    font-size: 48px;
+    z-index: 1;
+    opacity: 0.85;
+  }
+
+  &__icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    border: 1.5px solid rgba(255, 255, 255, 0.5);
+    z-index: 2;
+    position: relative;
+
+    &--featured {
+      margin-top: 32px;
+    }
+  }
+
+  &__icon {
+    font-size: 24px;
+  }
+
+  &__body {
+    margin-top: 14px;
+    z-index: 2;
+    position: relative;
+  }
+
+  &__title {
+    display: block;
+    font-size: 18px;
+    font-weight: bold;
+    color: rgba(60, 45, 30, 1);
+    margin-bottom: 4px;
+  }
+
+  &__subtitle {
+    display: block;
+    font-size: 13px;
+    color: rgba(140, 120, 100, 1);
+  }
+
+  &__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 32px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(2px);
+
+    &-icon {
+      font-size: 22px;
+    }
+
+    &-text {
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 0.15em;
+      color: rgba(100, 96, 90, 0.85);
+      margin-top: 6px;
+    }
+  }
+}
