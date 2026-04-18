@@ -83,8 +83,10 @@ const Frame = () => {
         {!showLearning && (
           <Header activeVocab={activeVocab} onOpenModal={openModalAlways} />
         )}
-        <ScrollView scrollY className={styles.mainContent}>
-          {renderContent()}
+        <ScrollView scrollY style={{ flex: 1, height: 0 }}>
+          <View className={styles.scrollInner}>
+            {renderContent()}
+          </View>
         </ScrollView>
         {!showLearning && (
           <BottomTabBar activeTab={activeTab} onTabChange={handleTabChange} />
