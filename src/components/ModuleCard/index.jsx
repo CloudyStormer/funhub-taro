@@ -46,19 +46,31 @@ const ModuleCard = ({
         style={{ background: bgColor, borderColor: iconBgColor }}
         onClick={handleTap}
       >
+        {/* 已开张 badge */}
         <View className='module-card__badge' style={{ background: iconBgColor }}>
           <View className='module-card__badge-dot' />
           <Text className='module-card__badge-text'>已开张</Text>
         </View>
+
+        {/* 右上角装饰 emoji */}
         {decorationEmoji !== '' && (
           <Text className='module-card__deco'>{decorationEmoji}</Text>
         )}
+
+        {/* 图标 */}
         <View className='module-card__icon-wrap module-card__icon-wrap--featured' style={{ background: iconBgColor }}>
           <Text className='module-card__icon'>{emoji}</Text>
         </View>
-        <View className='module-card__body'>
+
+        {/* 标题副标题贴底 */}
+        <View className='module-card__body module-card__body--featured'>
           <Text className='module-card__title'>{title}</Text>
           <Text className='module-card__subtitle'>{subtitle}</Text>
+        </View>
+
+        {/* 右下角箭头按钮 */}
+        <View className='module-card__arrow' style={{ boxShadow: `0 2px 10px ${iconBgColor}90` }}>
+          <Text className='module-card__arrow-icon' style={{ color: iconBgColor }}>Go</Text>
         </View>
       </View>
     )

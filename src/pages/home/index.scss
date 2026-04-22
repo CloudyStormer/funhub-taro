@@ -1,3 +1,51 @@
+// ---- Logo 落地弹跳（循环：落地 → 弹跳 → 停留 → 再落）----
+@keyframes logo-drop-bounce {
+  0%         { transform: translateY(-8vw);  opacity: 0; }
+  18%        { transform: translateY(1.3vw); opacity: 1; }
+  26%        { transform: translateY(-1.1vw); }
+  32%        { transform: translateY(0.8vw); }
+  37%        { transform: translateY(-0.3vw); }
+  42%, 100%  { transform: translateY(0);     opacity: 1; }
+}
+
+.logo-drop-bounce {
+  animation: logo-drop-bounce 4s ease-in-out infinite;
+}
+
+// ---- 飞鸟动画 ----
+@keyframes bird-lr {
+  0%   { transform: translateX(-10vw); opacity: 0; }
+  6%   { opacity: 1; }
+  94%  { opacity: 1; }
+  100% { transform: translateX(110vw); opacity: 0; }
+}
+
+@keyframes bird-rl {
+  0%   { transform: translateX(110vw); opacity: 0; }
+  6%   { opacity: 1; }
+  94%  { opacity: 1; }
+  100% { transform: translateX(-10vw); opacity: 0; }
+}
+
+.bird {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+
+  &--lr {
+    left: 0;
+    animation-name: bird-lr;
+  }
+
+  &--rl {
+    right: 0;
+    animation-name: bird-rl;
+  }
+}
+
+// ---- 主页布局 ----
 .home {
   min-height: 100vh;
   position: relative;
@@ -6,7 +54,6 @@
   align-items: flex-start;
   background: rgba(253, 250, 245, 1);
 
-  // ---- 背景光晕 ----
   &__glow {
     position: absolute;
     border-radius: 50%;
@@ -14,34 +61,33 @@
     z-index: 0;
 
     &--1 {
-      top: -80px;
-      left: -80px;
-      width: 320px;
-      height: 320px;
+      top: -21vw;
+      left: -21vw;
+      width: 85vw;
+      height: 85vw;
       background: rgba(79, 161, 152, 0.25);
-      filter: blur(80px);
+      filter: blur(21vw);
     }
 
     &--2 {
       top: 25%;
-      right: -128px;
-      width: 384px;
-      height: 384px;
+      right: -34vw;
+      width: 102vw;
+      height: 102vw;
       background: rgba(140, 210, 200, 0.2);
-      filter: blur(80px);
+      filter: blur(21vw);
     }
 
     &--3 {
-      bottom: -128px;
-      left: -40px;
-      width: 320px;
-      height: 320px;
+      bottom: -34vw;
+      left: -10vw;
+      width: 85vw;
+      height: 85vw;
       background: rgba(79, 161, 152, 0.15);
-      filter: blur(100px);
+      filter: blur(26vw);
     }
   }
 
-  // ---- 主容器 ----
   &__scroll {
     width: 100%;
     min-height: 100vh;
@@ -50,70 +96,71 @@
     z-index: 1;
     display: flex;
     flex-direction: column;
-    padding-bottom: 48px;
+    padding-bottom: 12.8vw;
     box-sizing: border-box;
   }
 
   // ---- 头部 ----
   &__header {
-    padding: 20px 16px 24px;
+    padding: 5.3vw 4.3vw 6.4vw;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     position: relative;
     overflow: hidden;
-    border-radius: 24px;
-    margin: 0 16px;
+    border-radius: 6.4vw;
+    margin: 0 4.3vw;
+    min-height: 48vw;
 
     &-glow {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 192px;
-      height: 192px;
+      width: 51vw;
+      height: 51vw;
       background: rgba(255, 220, 200, 0.4);
       border-radius: 50%;
-      filter: blur(32px);
+      filter: blur(8.5vw);
       pointer-events: none;
     }
   }
 
   &__logo {
-    width: 128px;
-    border-radius: 16px;
+    width: 34vw;
+    border-radius: 4.3vw;
     position: relative;
-    z-index: 1;
+    z-index: 2;
   }
 
   &__tagline {
+    display: block;
     color: rgba(140, 110, 80, 1);
     font-size: 14px;
     font-weight: 500;
-    margin-top: 8px;
+    margin-top: 2.1vw;
     letter-spacing: 0.2em;
     position: relative;
-    z-index: 1;
+    z-index: 2;
   }
 
   // ---- 卡片网格 ----
   &__grid {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: 8px 20px 0;
+    gap: 4.3vw;
+    padding: 2.1vw 5.3vw 0;
     position: relative;
     z-index: 2;
 
     &-row {
       display: flex;
-      gap: 16px;
+      gap: 4.3vw;
 
-      // 左侧糖果彩绘卡片
       .module-card:first-child {
         flex: 1;
-        min-height: 220px;
+        min-height: 58.7vw;
       }
     }
 
@@ -121,32 +168,31 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 4.3vw;
 
       .module-card {
         flex: 1;
-        min-height: 100px;
       }
     }
   }
 
   // ---- 底部标语 ----
   &__footer {
-    margin-top: 32px;
+    margin-top: 8.5vw;
     display: flex;
     justify-content: center;
     position: relative;
     z-index: 2;
 
     &-pill {
-      padding: 8px 24px;
+      padding: 2.1vw 6.4vw;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.4);
-      backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.6);
     }
 
     &-text {
+      display: block;
       color: rgba(230, 57, 40, 1);
       font-size: 14px;
       font-weight: bold;

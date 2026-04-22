@@ -8,7 +8,7 @@ export default defineConfig(async (merge, { command, mode }) => {
   const baseConfig = {
     projectName: 'aa',
     date: '2026-4-18',
-    designWidth: 750,
+    designWidth: 375,
     deviceRatio: {
       640: 2.34 / 2,
       750: 1,

@@ -1,14 +1,25 @@
+// ---- 卡片发光呼吸动画 ----
+@keyframes glow-breathe-teal {
+  0%, 100% { box-shadow: 0 1.1vw 5.3vw rgba(79, 161, 152, 0.25); }
+  50%       { box-shadow: 0 2.1vw 9.6vw rgba(79, 161, 152, 0.55); }
+}
+
+@keyframes glow-breathe-pink {
+  0%, 100% { box-shadow: 0 1.1vw 5.3vw rgba(240, 110, 130, 0.25); }
+  50%       { box-shadow: 0 2.1vw 9.6vw rgba(240, 110, 130, 0.55); }
+}
+
 .module-card {
   position: relative;
   overflow: hidden;
-  border-radius: 32px;
-  padding: 20px;
+  border-radius: 4vw;
+  padding: 5.3vw;
   display: flex;
   flex-direction: column;
-  border: 2px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 8px 24px rgba(200, 180, 160, 0.15);
-  backdrop-filter: blur(12px);
+  border: 0.5vw solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2.1vw 6.4vw rgba(200, 180, 160, 0.15);
   box-sizing: border-box;
+  min-height: 34.7vw;
 
   &--construction {
     background: rgba(220, 218, 215, 0.45);
@@ -17,8 +28,9 @@
   }
 
   &--featured {
-    border-width: 2.5px;
+    border-width: 0.67vw;
     border-style: solid;
+    min-height: 42.7vw;
   }
 
   &--glow-teal {
@@ -29,26 +41,28 @@
     animation: glow-breathe-pink 2.4s ease-in-out infinite;
   }
 
+  // ---- 已开张 badge ----
   &__badge {
     position: absolute;
-    top: 16px;
-    left: 16px;
+    top: 3.7vw;
+    left: 3.7vw;
     z-index: 3;
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
+    gap: 1.3vw;
+    padding: 1.1vw 2.7vw;
     border-radius: 999px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0.5vw 2.1vw rgba(0, 0, 0, 0.15);
 
     &-dot {
-      width: 8px;
-      height: 8px;
+      width: 1.9vw;
+      height: 1.9vw;
       border-radius: 50%;
       background: white;
     }
 
     &-text {
+      display: block;
       font-size: 11px;
       font-weight: bold;
       color: white;
@@ -56,39 +70,48 @@
     }
   }
 
+  // ---- 右上角装饰 emoji ----
   &__deco {
     position: absolute;
-    right: -4px;
-    top: -4px;
-    font-size: 48px;
+    right: -0.5vw;
+    top: -1.1vw;
+    font-size: 13.9vw;
     z-index: 1;
-    opacity: 0.85;
+    opacity: 0.9;
   }
 
+  // ---- 图标容器 ----
   &__icon-wrap {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 48px;
-    height: 48px;
-    border-radius: 16px;
-    border: 1.5px solid rgba(255, 255, 255, 0.5);
+    width: 12.8vw;
+    height: 12.8vw;
+    border-radius: 4.3vw;
+    border: 0.4vw solid rgba(255, 255, 255, 0.5);
     z-index: 2;
     position: relative;
+    flex-shrink: 0;
 
     &--featured {
-      margin-top: 32px;
+      margin-top: 7.5vw;
     }
   }
 
   &__icon {
-    font-size: 24px;
+    font-size: 6.4vw;
   }
 
+  // ---- 文字区 ----
   &__body {
-    margin-top: 14px;
+    margin-top: 3.2vw;
     z-index: 2;
     position: relative;
+
+    &--featured {
+      margin-top: auto;
+      padding-bottom: 1.1vw;
+    }
   }
 
   &__title {
@@ -96,7 +119,7 @@
     font-size: 18px;
     font-weight: bold;
     color: rgba(60, 45, 30, 1);
-    margin-bottom: 4px;
+    margin-bottom: 1.1vw;
   }
 
   &__subtitle {
@@ -105,19 +128,42 @@
     color: rgba(140, 120, 100, 1);
   }
 
+  // ---- 右下角箭头按钮 ----
+  &__arrow {
+    position: absolute;
+    bottom: 3.7vw;
+    right: 3.7vw;
+    width: 8vw;
+    height: 8vw;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+
+    &-icon {
+      display: block;
+      font-size: 15px;
+      font-weight: bold;
+      line-height: 1;
+    }
+  }
+
+  // ---- 建造中遮罩（加厚）----
   &__overlay {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    border-radius: 32px;
+    border-radius: 4vw;
     z-index: 10;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(155, 150, 143, 0.85);
     backdrop-filter: blur(2px);
 
     &-icon {
@@ -125,11 +171,12 @@
     }
 
     &-text {
+      display: block;
       font-size: 11px;
       font-weight: bold;
       letter-spacing: 0.15em;
-      color: rgba(100, 96, 90, 0.85);
-      margin-top: 6px;
+      color: rgba(255, 255, 255, 0.95);
+      margin-top: 1.6vw;
     }
   }
 }
