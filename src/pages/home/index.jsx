@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, Image } from '@tarojs/components'
-import ModuleCard from '../../components/ModuleCard'
+import ModuleCard from './ModuleCard'
 import './index.scss'
 
 // 8 只飞鸟配置：size / top / direction / duration / delay
