@@ -30,7 +30,7 @@ const HeroSection = ({ onBooking }) => {
   const [current, setCurrent] = useState(0)
 
   return (
-    <View style={{ position: 'relative', width: '100%', height: '90vw', overflow: 'hidden' }}>
+    <View style={{ position: 'relative', width: '100%', height: '56vw', overflow: 'hidden' }}>
       {/* Top header — 覆盖在 Swiper 上方 */}
       <View style={{
         position: 'absolute', top: 0, left: 0, right: 0,
@@ -63,11 +63,11 @@ const HeroSection = ({ onBooking }) => {
         interval={3200}
         circular
         onChange={(e) => setCurrent(e.detail.current)}
-        style={{ width: '100%', height: '90vw' }}
+        style={{ width: '100%', height: '56vw' }}
       >
         {slides.map(s => (
           <SwiperItem key={s.id}>
-            <View style={{ position: 'relative', width: '100%', height: '90vw' }}>
+            <View style={{ position: 'relative', width: '100%', height: '56vw' }}>
               <Image src={s.image} mode='aspectFill' style={{ width: '100%', height: '100%' }} />
               {/* 渐变遮罩 */}
               <View style={{
