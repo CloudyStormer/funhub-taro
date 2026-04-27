@@ -10,7 +10,7 @@ const ContactFooter = () => {
         <View style={{ flex: 1, height: '1px', background: 'rgba(220,200,230,0.5)' }} />
       </View>
       <Text style={{ display: 'block', fontSize: '11px', color: 'rgba(148,120,148,1)' }}>
-        © 2024 Magical Face Painting. All rights reserved.
+        Laugh like a child.
       </Text>
       <Text style={{ display: 'block', fontSize: '10px', color: 'rgba(148,120,148,0.6)', marginTop: '1.6vw' }}>
         让每一个孩子都成为小公主 ✨

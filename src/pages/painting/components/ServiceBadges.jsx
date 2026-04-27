@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Text, ScrollView } from '@tarojs/components'
 
 const badges = [
-  { emoji: '🛡️', label: '安全无毒', sub: 'FDA认证', color: 'rgba(52,211,153,1)', bg: 'rgba(209,250,229,0.6)' },
+  { emoji: '🛡️', label: '安全无毒', sub: '放心游玩', color: 'rgba(52,211,153,1)', bg: 'rgba(209,250,229,0.6)' },
   { emoji: '💧', label: '水性颜料', sub: '轻松卸妆', color: 'rgba(96,165,250,1)', bg: 'rgba(219,234,254,0.6)' },
   { emoji: '⏰', label: '持久4-6h', sub: '全天不花妆', color: 'rgba(251,146,60,1)', bg: 'rgba(255,237,213,0.6)' },
   { emoji: '🏆', label: '专业画师', sub: '10年经验', color: 'rgba(236,72,153,1)', bg: 'rgba(252,231,243,0.6)' },

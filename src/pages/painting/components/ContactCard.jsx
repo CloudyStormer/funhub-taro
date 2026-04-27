@@ -88,9 +88,9 @@ const ContactCard = () => {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ display: 'block', fontSize: '10px', color: 'rgba(148,120,148,1)', marginBottom: '0.8vw' }}>微信号</Text>
-              <Text style={{ fontSize: '15px', fontWeight: '800', color: 'rgba(30,15,40,1)' }}>MagicPaint_Kids</Text>
+              <Text style={{ fontSize: '15px', fontWeight: '800', color: 'rgba(30,15,40,1)' }}>wxid_88v0zigmz3tx12</Text>
             </View>
-            <Text style={{ fontSize: '11px', fontWeight: '600', color: 'rgba(192,132,252,1)', flexShrink: 0 }}>扫码添加</Text>
+            <Text style={{ fontSize: '11px', fontWeight: '600', color: 'rgba(192,132,252,1)', flexShrink: 0 }}>搜索添加</Text>
           </View>
 
           {/* 地址 */}
@@ -110,7 +110,7 @@ const ContactCard = () => {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ display: 'block', fontSize: '10px', color: 'rgba(148,120,148,1)', marginBottom: '0.8vw' }}>门店地址</Text>
-              <Text style={{ fontSize: '13px', fontWeight: 'bold', color: 'rgba(30,15,40,1)' }}>魔法城校贸物中心 2F</Text>
+              <Text style={{ fontSize: '13px', fontWeight: 'bold', color: 'rgba(30,15,40,1)' }}>霍格沃茨魔法与巫术学院</Text>
             </View>
           </View>
         </View>
@@ -121,7 +121,7 @@ const ContactCard = () => {
           alignItems: 'center', justifyContent: 'center', gap: '1.6vw', position: 'relative',
         }}>
           <Text style={{ fontSize: '12px' }}>🕙</Text>
-          <Text style={{ fontSize: '11px', color: 'rgba(148,120,148,1)' }}>营业时间：每天 10:00 - 20:00</Text>
+          <Text style={{ fontSize: '11px', color: 'rgba(148,120,148,1)' }}>营业时间：昨天今天和明天</Text>
         </View>
       </View>
     </View>
