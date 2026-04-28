@@ -97,7 +97,9 @@ const HeroSection = ({ onBooking }) => {
                     boxShadow: '0 6px 20px rgba(236,72,153,0.35)',
                   }}
                 >
-                  <Text style={{ color: 'white', fontWeight: 'bold', fontSize: '14px' }}>立即预约彩绘 ✨</Text>
+                  <Text style={{ color: 'white', fontWeight: 'bold', fontSize: '14px' }}>
+                    太阳当空照，花儿对我笑 ✨
+                  </Text>
                 </View>
               </View>
             </View>

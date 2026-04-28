@@ -4,7 +4,7 @@ import Taro from '@tarojs/taro'
 
 const ContactCard = () => {
   const makeCall = () => {
-    Taro.makePhoneCall({ phoneNumber: '13800008888' })
+    // Taro.makePhoneCall({ phoneNumber: '13800008888' })
   }
 
   return (
@@ -48,7 +48,7 @@ const ContactCard = () => {
           <View
             onClick={makeCall}
             style={{
-              display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '3.2vw',
+              display: 'none', flexDirection: 'row', alignItems: 'center', gap: '3.2vw',
               padding: '3.7vw', borderRadius: '4.3vw',
               border: '1px solid rgba(252,210,232,1)',
               background: 'rgba(255,240,248,0.7)',
@@ -65,10 +65,12 @@ const ContactCard = () => {
             <View style={{ flex: 1 }}>
               <Text style={{ display: 'block', fontSize: '10px', color: 'rgba(148,120,148,1)', marginBottom: '0.8vw' }}>预约电话</Text>
               <Text style={{ fontSize: '15px', fontWeight: '800', color: 'rgba(30,15,40,1)', letterSpacing: '0.05em' }}>
-                138-0000-8888
+                洞拐洞拐
               </Text>
             </View>
-            <Text style={{ fontSize: '11px', fontWeight: '600', color: 'rgba(236,72,153,1)', flexShrink: 0 }}>立即拨打</Text>
+            <Text style={{ fontSize: '11px', fontWeight: '600', color: 'rgba(236,72,153,1)', flexShrink: 0 }}>
+              立即拨打
+            </Text>
           </View>
 
           {/* 微信 */}
@@ -90,7 +92,7 @@ const ContactCard = () => {
               <Text style={{ display: 'block', fontSize: '10px', color: 'rgba(148,120,148,1)', marginBottom: '0.8vw' }}>微信号</Text>
               <Text style={{ fontSize: '15px', fontWeight: '800', color: 'rgba(30,15,40,1)' }}>wxid_88v0zigmz3tx12</Text>
             </View>
-            <Text style={{ fontSize: '11px', fontWeight: '600', color: 'rgba(192,132,252,1)', flexShrink: 0 }}>搜索添加</Text>
+            <Text style={{ fontSize: '11px', fontWeight: '600', color: 'rgba(192,132,252,1)', flexShrink: 0 }}>点击复制</Text>
           </View>
 
           {/* 地址 */}

@@ -134,12 +134,16 @@ const DesignGallery = () => {
                 <View style={{ padding: '2.7vw 3.7vw 3.2vw' }}>
                   <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.1vw' }}>
                     <Text style={{ fontSize: '14px', fontWeight: 'bold', color: 'rgba(30,15,40,1)' }}>{design.name}</Text>
-                    <Text style={{ fontSize: '13px', fontWeight: '800', color: 'rgba(236,72,153,1)' }}>{design.price}</Text>
+                    <Text style={{ fontSize: '13px', fontWeight: '800', color: 'rgba(236,72,153,1)' }}>
+                      {/* {design.price} */}
+                      开心无价❤️
+                    </Text>
                   </View>
                   <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '1.1vw' }}>
                     <Text style={{ fontSize: '11px' }}>❤️</Text>
                     <Text style={{ fontSize: '11px', color: 'rgba(148,120,148,1)' }}>
-                      {design.likes + (likedIds.includes(design.id) ? 1 : 0)} 喜欢
+                      {/* {design.likes + (likedIds.includes(design.id) ? 1 : 0)} 喜欢 */}
+                      好多好多人喜欢
                     </Text>
                   </View>
                 </View>

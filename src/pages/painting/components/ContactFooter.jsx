@@ -13,7 +13,7 @@ const ContactFooter = () => {
         Laugh like a child.
       </Text>
       <Text style={{ display: 'block', fontSize: '10px', color: 'rgba(148,120,148,0.6)', marginTop: '1.6vw' }}>
-        让每一个孩子都成为小公主 ✨
+        让每一个孩子都成为小公主 和 小王子 ✨
       </Text>
     </View>
   )
