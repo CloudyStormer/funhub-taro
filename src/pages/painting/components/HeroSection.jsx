@@ -2,24 +2,26 @@ import React, { useState } from 'react'
 import { View, Text, Image, Swiper, SwiperItem } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 
+const CDN = 'https://www.hgshouse.com/resource/painting'
+
 const slides = [
   {
     id: 1,
-    image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=900&auto=format&fit=crop',
+    image: `${CDN}/banner00.png`,
     tag: '✨ 超人气',
-    title: '梦幻蝴蝶',
+    title: '梦幻彩绘',
     subtitle: '为小公主画上奇幻彩妆',
   },
   {
     id: 2,
-    image: 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=900&auto=format&fit=crop',
+    image: `${CDN}/banner01.png`,
     tag: '🔮 魔法',
     title: '星空独角兽',
     subtitle: '点亮洒满每一刻',
   },
   {
     id: 3,
-    image: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?q=80&w=900&auto=format&fit=crop',
+    image: `${CDN}/banner02.png`,
     tag: '🌿 清新',
     title: '白花仙子',
     subtitle: '环保水性，安心彩绘',
@@ -54,7 +56,7 @@ const HeroSection = ({ onBooking }) => {
           background: 'rgba(255,255,255,0.18)',
           border: '1px solid rgba(255,255,255,0.3)',
         }}>
-          <Text style={{ fontSize: '11px', fontWeight: '600', color: 'white' }}>已服务 5000+ 家庭</Text>
+          <Text style={{ fontSize: '11px', fontWeight: '600', color: 'white' }}>已满足好多好多好奇宝宝</Text>
         </View>
       </View>
 
