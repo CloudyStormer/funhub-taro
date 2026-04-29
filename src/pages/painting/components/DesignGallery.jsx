@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { View, Text, Image, ScrollView } from '@tarojs/components'
+import Taro from '@tarojs/taro'
 
 const CDN = 'https://www.hgshouse.com/resource/painting'
 
@@ -33,6 +34,13 @@ const DesignGallery = () => {
   const [activeKey, setActiveKey] = useState('aisha')
 
   const current = CATEGORIES.find(c => c.key === activeKey)
+
+  const preview = (img) => {
+    Taro.previewImage({
+      current: `${CDN}/${img}`,
+      urls: current.images.map(i => `${CDN}/${i}`),
+    })
+  }
 
   return (
     <View style={{ paddingTop: '4.3vw', paddingBottom: '2.1vw' }}>
@@ -78,6 +86,7 @@ const DesignGallery = () => {
           {current.images.map((img, idx) => (
             <View
               key={idx}
+              onClick={() => preview(img)}
               style={{
                 flexShrink: 0, width: '48vw', borderRadius: '5.3vw',
                 overflow: 'hidden',
