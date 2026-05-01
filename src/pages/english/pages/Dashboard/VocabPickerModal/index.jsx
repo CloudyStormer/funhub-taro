@@ -112,8 +112,10 @@ const VocabPickerModal = ({ visible = false, activeVocab = null, onClose = () =>
       className={`${styles.overlay} ${visible ? styles.overlayVisible : ''}`}
       onClick={onClose}
     >
-      <View className={styles.sheet} onClick={(e) => e.stopPropagation()}>
-        <View className={`${styles.sheetInner} ${visible ? styles.sheetVisible : ''} ${mode === 'all' ? styles.sheetFull : ''}`}>
+      <View
+        className={`${styles.sheet} ${visible ? styles.sheetVisible : ''} ${mode === 'all' ? styles.sheetFull : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
           <View className={styles.handleRow}>
             <View className={styles.handle} />
           </View>
@@ -181,7 +183,6 @@ const VocabPickerModal = ({ visible = false, activeVocab = null, onClose = () =>
               <View className={styles.footerSpace} />
             </>
           )}
-        </View>
       </View>
     </View>
   );
