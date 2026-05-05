@@ -80,16 +80,22 @@ const Frame = () => {
   return (
     <View className={styles.appContainer}>
       <View className={styles.mobileWrapper}>
-        {!showLearning && (
-          <Header activeVocab={activeVocab} onOpenModal={openModalAlways} />
-        )}
-        <ScrollView scrollY style={{ flex: 1, height: 0 }}>
-          <View className={styles.scrollInner}>
-            {renderContent()}
-          </View>
-        </ScrollView>
-        {!showLearning && (
-          <BottomTabBar activeTab={activeTab} onTabChange={handleTabChange} />
+        {showLearning ? (
+          <LearningReadiness
+            sceneId={learningSceneId}
+            onBack={() => setShowLearning(false)}
+            onStart={() => setShowLearning(false)}
+          />
+        ) : (
+          <>
+            <Header activeVocab={activeVocab} onOpenModal={openModalAlways} />
+            <ScrollView scrollY style={{ flex: 1, height: 0 }}>
+              <View className={styles.scrollInner}>
+                {renderContent()}
+              </View>
+            </ScrollView>
+            <BottomTabBar activeTab={activeTab} onTabChange={handleTabChange} />
+          </>
         )}
         <VocabPickerModal
           visible={modalVisible}

@@ -1,12 +1,16 @@
 .reviewSection {
-  padding: 8px 24px 32px 24px;
+  padding: 8px 24px 32px;
 }
 
 .sectionTitleRow {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
+}
+
+.titleIcon {
+  font-size: 16px;
 }
 
 .sectionTitle {
@@ -16,63 +20,104 @@
   margin: 0;
 }
 
-.reviewCount {
-  color: rgb(148, 163, 184);
-  font-weight: normal;
-  font-size: 14px;
-  margin-left: 4px;
-}
-
-.reviewList {
-  background-color: rgb(255, 255, 255);
+/* ── 卡片 ── */
+.card {
+  background: rgb(255, 255, 255);
   border-radius: 16px;
   border: 1px solid rgb(226, 232, 240);
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
 
-.reviewItem {
+/* ── 每行任务 ── */
+.taskRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 16px;
-  background-color: rgb(255, 255, 255);
-  transition: background-color 0.2s;
-  cursor: pointer;
+  padding: 14px 16px;
+  gap: 10px;
+}
+
+.divider {
   border-bottom: 1px solid rgb(241, 245, 249);
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &:hover {
-    background-color: rgb(248, 250, 252);
-  }
 }
 
-.reviewWord {
-  font-family: monospace;
-  color: rgb(15, 23, 42);
-  font-weight: 500;
-  font-size: 15px;
-  margin: 0;
-}
-
-.reviewStats {
+/* ── 圆形勾选框 ── */
+.circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgb(209, 213, 219);
+  background: rgb(255, 255, 255);
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &.circleDone {
+    background: rgb(99, 82, 230);
+    border-color: rgb(99, 82, 230);
+  }
 }
 
-.starRow {
-  display: flex;
-  gap: 2px;
-}
-
-.reviewPercentage {
-  color: rgb(100, 116, 139);
+.checkMark {
+  color: rgb(255, 255, 255);
   font-size: 12px;
-  width: 32px;
-  text-align: right;
-  margin: 0;
+  font-weight: bold;
+  line-height: 1;
+}
+
+/* ── 任务名 ── */
+.taskTitle {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgb(15, 23, 42);
+
+  &.taskDone {
+    color: rgb(148, 163, 184);
+    text-decoration: line-through;
+  }
+}
+
+/* ── 词数 ── */
+.wordCount {
+  font-size: 12px;
+  color: rgb(148, 163, 184);
+  flex-shrink: 0;
+}
+
+/* ── 状态标签 ── */
+.statusTag {
+  padding: 3px 9px;
+  border-radius: 20px;
+  flex-shrink: 0;
+
+  &.tagDone {
+    background: rgb(220, 252, 231);
+  }
+
+  &.tagOngoing {
+    background: rgb(238, 242, 255);
+  }
+
+  &.tagNotStarted {
+    background: rgb(241, 245, 249);
+  }
+}
+
+.statusText {
+  font-size: 11px;
+  font-weight: 500;
+
+  &.tagDoneText {
+    color: rgb(22, 163, 74);
+  }
+
+  &.tagOngoingText {
+    color: rgb(99, 82, 230);
+  }
+
+  &.tagNotStartedText {
+    color: rgb(148, 163, 184);
+  }
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text } from '@tarojs/components';
+import { View, Text, ScrollView } from '@tarojs/components';
 import WordChip from './WordChip';
 import styles from './index.module.scss';
 
@@ -107,7 +107,8 @@ const LearningReadiness = ({ sceneId = 'office', onBack, onStart }) => {
       </View>
 
       {/* 可滚动内容区 */}
-      <View className={styles.scrollBody}>
+      <ScrollView scrollY className={styles.scrollBody}>
+        <View className={styles.scrollInner}>
         {/* 词汇概览横幅 */}
         <View className={styles.banner}>
           <View className={styles.bannerTitle}>
@@ -177,9 +178,10 @@ const LearningReadiness = ({ sceneId = 'office', onBack, onStart }) => {
         <View className={styles.hintCard}>
           <Text>💡 若选「提前学习」，则进入词汇闪卡练习；若选「直接开始」，则进入对话情景</Text>
         </View>
-      </View>
+        </View>
+      </ScrollView>
 
-      {/* 底部按钮 */}
+      {/* 底部按钮 — 固定在底部，不随内容滚动 */}
       <View className={styles.bottomBar}>
         <View className={styles.btnRow}>
           <View className={styles.btnSecondary} onClick={revealAll}>
