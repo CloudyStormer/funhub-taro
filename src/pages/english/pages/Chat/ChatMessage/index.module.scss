@@ -1,0 +1,122 @@
+.row {
+  display: flex;
+  width: 100%;
+  margin-bottom: 14px;
+  align-items: flex-end;
+  padding: 0 12px;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  &.rowUser {
+    flex-direction: row-reverse;
+  }
+
+  &.rowAi {
+    flex-direction: row;
+  }
+}
+
+/* ── 头像 ── */
+.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+
+  &.avatarUser {
+    background: rgb(115, 44, 255);
+    margin-left: 8px;
+  }
+
+  &.avatarAi {
+    background: rgb(241, 245, 249);
+    margin-right: 8px;
+  }
+}
+
+/* ── 气泡区 ── */
+.bubbleWrap {
+  max-width: 68%;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.bubble {
+  padding: 10px 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07);
+
+  &.bubbleUser {
+    background: rgb(115, 44, 255);
+    border-radius: 18px 18px 4px 18px;
+  }
+
+  &.bubbleAi {
+    background: rgb(255, 255, 255);
+    border: 1px solid rgb(233, 233, 240);
+    border-radius: 18px 18px 18px 4px;
+  }
+}
+
+/* ── 消息文字 ── */
+.msgText {
+  font-size: 14px;
+  line-height: 1.55;
+  word-break: break-word;
+
+  &.msgTextUser {
+    color: rgb(255, 255, 255);
+  }
+
+  &.msgTextAi {
+    color: rgb(20, 20, 30);
+  }
+}
+
+/* ── 语音消息 ── */
+.audioMsg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 110px;
+}
+
+.audioIcon {
+  font-size: 16px;
+  color: rgb(99, 82, 230);
+  &.audioIconUser { color: rgba(255, 255, 255, 0.9); }
+}
+
+.waveBar {
+  flex: 1;
+  height: 3px;
+  background: rgba(99, 82, 230, 0.3);
+  border-radius: 2px;
+  &.waveBarUser { background: rgba(255, 255, 255, 0.35); }
+}
+
+.audioDur {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgb(99, 82, 230);
+  &.audioDurUser { color: rgba(255, 255, 255, 0.9); }
+}
+
+/* ── 时间 ── */
+.time {
+  font-size: 10px;
+  color: rgb(148, 163, 184);
+  margin-top: 4px;
+  text-align: left;
+  margin-left: 2px;
+
+  &.timeUser {
+    text-align: right;
+    margin-right: 2px;
+    margin-left: 0;
+  }
+}

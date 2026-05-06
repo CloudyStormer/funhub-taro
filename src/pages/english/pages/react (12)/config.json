@@ -1,0 +1,18 @@
+{
+  "routes": [
+    {
+      "path": "/",
+      "src": "src/pages/Chat.tsx"
+    }
+  ],
+  "components": [
+    {
+      "name": "ChatMessage",
+      "src": "src/components/ChatMessage.tsx"
+    },
+    {
+      "name": "ChatInput",
+      "src": "src/components/ChatInput.tsx"
+    }
+  ]
+}

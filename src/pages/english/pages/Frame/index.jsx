@@ -7,23 +7,23 @@ import Dashboard from '../Dashboard';
 import SchedulePage from '../Schedule';
 import VocabPickerModal from '../Dashboard/VocabPickerModal';
 import LearningReadiness from '../LearningReadiness';
+import Chat from '../Chat';
 import styles from './index.module.scss';
 
 const Frame = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [modalVisible, setModalVisible] = useState(false);
-  const [activeVocab, setActiveVocab] = useState(null);
-  const [pendingTab, setPendingTab] = useState(null);
-  const [showLearning, setShowLearning] = useState(false);
+  const [activeTab, setActiveTab]           = useState('dashboard');
+  const [modalVisible, setModalVisible]     = useState(false);
+  const [activeVocab, setActiveVocab]       = useState(null);
+  const [pendingTab, setPendingTab]         = useState(null);
+  const [showLearning, setShowLearning]     = useState(false);
+  const [showChat, setShowChat]             = useState(false);
   const [learningSceneId, setLearningSceneId] = useState('office');
 
-  // Header 始终可弹窗换词库
   const openModalAlways = () => setModalVisible(true);
 
   const SCENE_IDS = ['office', 'contract', 'travel'];
   const randomScene = () => SCENE_IDS[Math.floor(Math.random() * SCENE_IDS.length)];
 
-  // 进入学习准备页（已选词库直接跳；未选先弹窗）
   const goToLearning = (sceneId) => {
     const id = sceneId || randomScene();
     if (activeVocab) {
@@ -34,10 +34,10 @@ const Frame = () => {
     }
   };
 
-  // Tab 切换：未选词库先弹窗
   const handleTabChange = (id) => {
     if (activeVocab) {
       setShowLearning(false);
+      setShowChat(false);
       setActiveTab(id);
     } else {
       setPendingTab(id);
@@ -54,16 +54,18 @@ const Frame = () => {
     }
   };
 
-  const renderContent = () => {
-    if (showLearning) {
-      return (
-        <LearningReadiness
-          sceneId={learningSceneId}
-          onBack={() => setShowLearning(false)}
-          onStart={() => setShowLearning(false)}
-        />
-      );
-    }
+  // 直接开始 → 进入 Chat
+  const handleStart = () => {
+    setShowLearning(false);
+    setShowChat(true);
+  };
+
+  // Chat 返回 → 回到 Dashboard
+  const handleChatBack = () => {
+    setShowChat(false);
+  };
+
+  const renderMain = () => {
     switch (activeTab) {
       case 'schedule':      return <SchedulePage />;
       case 'retrospective': return <RetrospectivePage />;
@@ -80,23 +82,30 @@ const Frame = () => {
   return (
     <View className={styles.appContainer}>
       <View className={styles.mobileWrapper}>
-        {showLearning ? (
+
+        {/* ── Chat 页（最高优先级，全屏覆盖） ── */}
+        {showChat ? (
+          <Chat onBack={handleChatBack} />
+        ) : showLearning ? (
+          /* ── 学习准备页 ── */
           <LearningReadiness
             sceneId={learningSceneId}
             onBack={() => setShowLearning(false)}
-            onStart={() => setShowLearning(false)}
+            onStart={handleStart}
           />
         ) : (
+          /* ── 常规 Tab 内容 ── */
           <>
             <Header activeVocab={activeVocab} onOpenModal={openModalAlways} />
             <ScrollView scrollY style={{ flex: 1, height: 0 }}>
               <View className={styles.scrollInner}>
-                {renderContent()}
+                {renderMain()}
               </View>
             </ScrollView>
             <BottomTabBar activeTab={activeTab} onTabChange={handleTabChange} />
           </>
         )}
+
         <VocabPickerModal
           visible={modalVisible}
           activeVocab={activeVocab}
