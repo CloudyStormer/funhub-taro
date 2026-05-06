@@ -6,22 +6,69 @@ import styles from './index.module.scss'
 
 const CANCEL_THRESHOLD = 80
 
-// RecorderManager 为单例，组件外初始化一次
-const recManager = Taro.getRecorderManager()
-
 const ChatInput = ({ onSendMessage = () => {} }) => {
-  const [mode, setMode]                   = useState('keyboard')
-  const [inputText, setInputText]         = useState('')
-  const [isRecording, setIsRecording]     = useState(false)
-  const [isCancelling, setIsCancelling]   = useState(false)
+  const [mode, setMode]                     = useState('keyboard')
+  const [inputText, setInputText]           = useState('')
+  const [isRecording, setIsRecording]       = useState(false)
+  const [isCancelling, setIsCancelling]     = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
-  const [recordSec, setRecordSec]         = useState(0)
-  const [errMsg, setErrMsg]               = useState('')
+  const [recordSec, setRecordSec]           = useState(0)
 
+  // ref：不受闭包陈旧值影响
+  const hasMicPerm  = useRef(false)
   const timerRef    = useRef(null)
   const pressStartY = useRef(0)
   const isPressed   = useRef(false)
-  const cancelRef   = useRef(false)   // 同步副本，供 onStop 回调使用
+  const cancelRef   = useRef(false)
+  const rmRef       = useRef(null)   // RecorderManager 懒初始化
+
+  /* ── 挂载时初始化 RecorderManager 并预检权限 ── */
+  useEffect(() => {
+    const rm = Taro.getRecorderManager()
+    rmRef.current = rm
+
+    rm.onStart(() => {
+      setIsRecording(true)
+      setRecordSec(0)
+    })
+
+    rm.onStop(async ({ tempFilePath }) => {
+      setIsRecording(false)
+      if (cancelRef.current) { cancelRef.current = false; return }
+      if (!tempFilePath) {
+        Taro.showToast({ title: '录音文件丢失', icon: 'none', duration: 2000 })
+        return
+      }
+      setIsTranscribing(true)
+      try {
+        const text = await transcribeAudio(tempFilePath)
+        if (text?.trim()) {
+          onSendMessage(text.trim(), false)
+        } else {
+          Taro.showToast({ title: '未识别到内容，请重试', icon: 'none', duration: 2000 })
+        }
+      } catch (e) {
+        console.error('ASR error', e)
+        Taro.showToast({ title: '识别失败，请重试', icon: 'none', duration: 2000 })
+      } finally {
+        setIsTranscribing(false)
+      }
+    })
+
+    rm.onError((err) => {
+      setIsRecording(false)
+      Taro.showToast({ title: err.errMsg || '录音出错', icon: 'none', duration: 2000 })
+    })
+
+    // 预检：已授权则直接标记
+    Taro.getSetting({
+      success: (res) => {
+        if (res.authSetting['scope.record']) {
+          hasMicPerm.current = true
+        }
+      },
+    })
+  }, [])
 
   /* ── 录音计时 ── */
   useEffect(() => {
@@ -29,56 +76,10 @@ const ChatInput = ({ onSendMessage = () => {} }) => {
       timerRef.current = setInterval(() => setRecordSec(p => p + 1), 1000)
     } else {
       clearInterval(timerRef.current)
-      setRecordSec(0)
     }
     return () => clearInterval(timerRef.current)
   }, [isRecording])
 
-  /* ── RecorderManager 事件绑定（组件挂载时一次） ── */
-  useEffect(() => {
-    recManager.onStart(() => {
-      setIsRecording(true)
-      setErrMsg('')
-    })
-
-    recManager.onStop(async ({ tempFilePath }) => {
-      setIsRecording(false)
-
-      if (cancelRef.current) {
-        cancelRef.current = false
-        return
-      }
-
-      if (!tempFilePath) {
-        setErrMsg('录音文件丢失')
-        return
-      }
-
-      // 转写中
-      setIsTranscribing(true)
-      try {
-        const text = await transcribeAudio(tempFilePath)
-        if (text?.trim()) {
-          onSendMessage(text.trim(), false)   // 转译后当普通文本发送
-        } else {
-          setErrMsg('未识别到内容')
-        }
-      } catch (e) {
-        console.error('ASR error', e)
-        setErrMsg('识别失败，请重试')
-      } finally {
-        setIsTranscribing(false)
-      }
-    })
-
-    recManager.onError((err) => {
-      setIsRecording(false)
-      setIsTranscribing(false)
-      setErrMsg(err.errMsg || '录音出错')
-    })
-  }, [])
-
-  /* ── 格式化秒数 ── */
   const fmt = (s) =>
     `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
 
@@ -89,22 +90,45 @@ const ChatInput = ({ onSendMessage = () => {} }) => {
     setInputText('')
   }
 
-  /* ── 按住开始录音 ── */
+  /* ── 切换模式：切到语音时申请权限 ── */
+  const toggleMode = () => {
+    const next = mode === 'keyboard' ? 'voice' : 'keyboard'
+    if (next === 'voice' && !hasMicPerm.current) {
+      Taro.authorize({ scope: 'scope.record' })
+        .then(() => {
+          hasMicPerm.current = true
+          setMode('voice')
+        })
+        .catch(() => {
+          Taro.showModal({
+            title: '需要麦克风权限',
+            content: '请在设置中开启麦克风权限以使用语音功能',
+            confirmText: '去设置',
+            success: (res) => { if (res.confirm) Taro.openSetting() },
+          })
+        })
+    } else {
+      setMode(next)
+    }
+  }
+
+  /* ── 触摸事件：直接同步启动录音 ── */
   const onTouchStart = (e) => {
+    if (!hasMicPerm.current || !rmRef.current) return
     isPressed.current   = true
     cancelRef.current   = false
     pressStartY.current = e.touches[0].clientY
     setIsCancelling(false)
-    recManager.start({
-      duration:       60000,
-      format:         'amr',   // 百度 ASR 支持 amr + 8000Hz
-      sampleRate:     8000,
+    Taro.vibrateShort()   // 振动反馈，确认触摸响应
+    rmRef.current.start({
+      duration:         60000,
+      format:           'amr',
+      sampleRate:       8000,
       numberOfChannels: 1,
-      encodeBitRate:  18000,
+      encodeBitRate:    18000,
     })
   }
 
-  /* ── 滑动判断取消 ── */
   const onTouchMove = (e) => {
     if (!isPressed.current) return
     const cancel = pressStartY.current - e.touches[0].clientY > CANCEL_THRESHOLD
@@ -112,12 +136,11 @@ const ChatInput = ({ onSendMessage = () => {} }) => {
     cancelRef.current = cancel
   }
 
-  /* ── 松开停止 ── */
   const onTouchEnd = () => {
     if (!isPressed.current) return
     isPressed.current = false
     setIsCancelling(false)
-    recManager.stop()   // 触发 onStop
+    rmRef.current?.stop()
   }
 
   /* ── 颜色 ── */
@@ -153,24 +176,12 @@ const ChatInput = ({ onSendMessage = () => {} }) => {
         </View>
       )}
 
-      {/* 错误提示（3s 后自动消失可自行加 useEffect） */}
-      {errMsg ? (
-        <View className={styles.errBar}>
-          <Text className={styles.errText}>{errMsg}</Text>
-        </View>
-      ) : null}
-
       {/* 输入行 */}
       <View className={styles.row}>
-        {/* 模式切换 */}
-        <View
-          className={styles.iconBtn}
-          onClick={() => setMode(p => p === 'keyboard' ? 'voice' : 'keyboard')}
-        >
+        <View className={styles.iconBtn} onClick={toggleMode}>
           <Text style={{ fontSize: '18px' }}>{mode === 'keyboard' ? '🎤' : '⌨️'}</Text>
         </View>
 
-        {/* 主体 */}
         <View className={styles.inputMain}>
           {mode === 'keyboard' ? (
             <View className={styles.textareaBox}>
@@ -202,7 +213,6 @@ const ChatInput = ({ onSendMessage = () => {} }) => {
           )}
         </View>
 
-        {/* 发送 / 更多 */}
         {mode === 'keyboard' && inputText.trim() ? (
           <View className={`${styles.iconBtn} ${styles.sendBtn}`} onClick={handleSendText}>
             <Text style={{ color: 'rgb(255,255,255)', fontSize: '16px' }}>▶</Text>
