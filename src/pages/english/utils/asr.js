@@ -7,8 +7,8 @@
  */
 import Taro from '@tarojs/taro'
 
-const BAIDU_API_KEY    = 'YOUR_API_KEY'     // ← 填入你的 API Key
-const BAIDU_SECRET_KEY = 'YOUR_SECRET_KEY'  // ← 填入你的 Secret Key
+const BAIDU_API_KEY    = 'x5TAqJTnDa6X9D8huBn3U4Lh'
+const BAIDU_SECRET_KEY = 'gcuKjwvjip5vXHn6FPnInGsWCvF1mrOp'
 
 let _token = null
 let _tokenExpiry = 0
@@ -28,10 +28,10 @@ const getToken = () =>
           _tokenExpiry = Date.now() + (res.data.expires_in - 300) * 1000
           resolve(_token)
         } else {
-          reject(new Error('百度 Token 获取失败'))
+          reject(new Error('Token失败:' + JSON.stringify(res.data)))
         }
       },
-      fail: reject,
+      fail: (err) => reject(new Error('Token网络错误:' + err.errMsg)),
     })
   })
 
@@ -46,7 +46,7 @@ export const transcribeAudio = async (filePath) => {
     Taro.getFileSystemManager().readFile({
       filePath,
       success: (res) => resolve(res.data),
-      fail: reject,
+      fail: (err) => reject(new Error('读取文件失败:' + err.errMsg)),
     })
   })
 
@@ -75,10 +75,10 @@ export const transcribeAudio = async (filePath) => {
         if (res.data?.err_no === 0) {
           resolve(res.data.result[0] ?? '')
         } else {
-          reject(new Error(res.data?.err_msg ?? '语音识别失败'))
+          reject(new Error(`ASR错误${res.data?.err_no}:${res.data?.err_msg}`))
         }
       },
-      fail: reject,
+      fail: (err) => reject(new Error('ASR网络错误:' + err.errMsg)),
     })
   })
 

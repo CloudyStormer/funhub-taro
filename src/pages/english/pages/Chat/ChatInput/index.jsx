@@ -49,7 +49,8 @@ const ChatInput = ({ onSendMessage = () => {} }) => {
         }
       } catch (e) {
         console.error('ASR error', e)
-        Taro.showToast({ title: '识别失败，请重试', icon: 'none', duration: 2000 })
+        const msg = e?.message || e?.errMsg || JSON.stringify(e) || '未知错误'
+        Taro.showToast({ title: msg.slice(0, 30), icon: 'none', duration: 4000 })
       } finally {
         setIsTranscribing(false)
       }
