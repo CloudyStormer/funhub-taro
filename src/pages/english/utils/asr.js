@@ -63,8 +63,8 @@ export const transcribeAudio = async (filePath) => {
       method: 'POST',
       header: { 'Content-Type': 'application/json' },
       data: {
-        format: 'amr',   // RecorderManager 使用 amr 格式
-        rate: 8000,
+        format: 'mp3',
+        rate: 16000,
         channel: 1,
         token,
         len: fileData.byteLength,

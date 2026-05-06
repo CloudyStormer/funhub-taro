@@ -122,10 +122,10 @@ const ChatInput = ({ onSendMessage = () => {} }) => {
     Taro.vibrateShort()   // 振动反馈，确认触摸响应
     rmRef.current.start({
       duration:         60000,
-      format:           'amr',
-      sampleRate:       8000,
+      format:           'mp3',
+      sampleRate:       16000,
       numberOfChannels: 1,
-      encodeBitRate:    18000,
+      encodeBitRate:    48000,
     })
   }
 
