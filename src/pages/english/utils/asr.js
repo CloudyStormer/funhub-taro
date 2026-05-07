@@ -70,7 +70,7 @@ export const transcribeAudio = async (filePath) => {
         token,
         len: fileData.byteLength,
         speech: base64Audio,
-        dev_pid: 1537,
+        dev_pid: 1737,   // 1737=英语
       },
       success: (res) => {
         if (res.data?.err_no === 0) {
