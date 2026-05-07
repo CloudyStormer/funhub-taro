@@ -115,7 +115,7 @@ const ChatInput = ({ onSendMessage = () => {} }) => {
 
   /* ── 触摸事件：直接同步启动录音 ── */
   const onTouchStart = (e) => {
-    if (!hasMicPerm.current || !rmRef.current) return
+    if (!hasMicPerm.current || !rmRef.current || isTranscribing) return
     isPressed.current   = true
     cancelRef.current   = false
     pressStartY.current = e.touches[0].clientY
@@ -123,10 +123,9 @@ const ChatInput = ({ onSendMessage = () => {} }) => {
     Taro.vibrateShort()   // 振动反馈，确认触摸响应
     rmRef.current.start({
       duration:         60000,
-      format:           'mp3',
+      format:           'pcm',
       sampleRate:       16000,
       numberOfChannels: 1,
-      encodeBitRate:    48000,
     })
   }
 

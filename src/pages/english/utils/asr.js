@@ -7,8 +7,8 @@
  */
 import Taro from '@tarojs/taro'
 
-const BAIDU_API_KEY    = 'x5TAqJTnDa6X9D8huBn3U4Lh'
-const BAIDU_SECRET_KEY = 'gcuKjwvjip5vXHn6FPnInGsWCvF1mrOp'
+const BAIDU_API_KEY    = 'kcUIVjDL5APTizsTXS1zV9gG'
+const BAIDU_SECRET_KEY = 'hFtFtjKNOE3tv5nPbcr32m2iwKYXzEL0'
 
 let _token = null
 let _tokenExpiry = 0
@@ -63,13 +63,14 @@ export const transcribeAudio = async (filePath) => {
       method: 'POST',
       header: { 'Content-Type': 'application/json' },
       data: {
-        format: 'mp3',
+        format: 'pcm',
         rate: 16000,
         channel: 1,
+        cuid: 'funhub-taro-client',
         token,
         len: fileData.byteLength,
         speech: base64Audio,
-        dev_pid: 1537,   // 1537=普通话, 1737=英语
+        dev_pid: 1537,
       },
       success: (res) => {
         if (res.data?.err_no === 0) {
