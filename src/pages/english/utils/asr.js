@@ -12,8 +12,9 @@ const APP_ID     = 'fb74bf2a'
 const API_KEY    = 'a1ddd25040f6bd8a802a593289054510'
 const API_SECRET = 'YmUwZGRlZWRhMDU3ZjFkNjI4NjFlOGFj'
 
-const CHUNK_SIZE = 1280  // 每帧 1280 字节 (40ms @ 16kHz)
-const TIMEOUT_MS = 10000 // 10s 超时兜底
+const CHUNK_SIZE    = 1280   // 每帧 1280 字节 (40ms @ 16kHz)
+const SEND_INTERVAL = 5      // 文件上传不需要实时速率，5ms 发一帧（8x 加速）
+const TIMEOUT_MS    = 20000  // 20s 超时兜底（长句需要更多时间）
 
 /** 生成带鉴权的 WebSocket URL（WebSocket 握手是 GET） */
 const buildAuthUrl = () => {
@@ -137,7 +138,7 @@ export const transcribeAudio = (filePath) =>
                 language: 'zh_cn',
                 domain:   'iat',
                 accent:   'mandarin',
-                vad_eos:  3000,
+                vad_eos:  8000,   // 8s 静音才判断结束，避免长句被提前截断
                 dwa:      'wpgs',
               }
             }
@@ -157,7 +158,7 @@ export const transcribeAudio = (filePath) =>
             offset = end
 
             if (!isEnd) {
-              setTimeout(sendNext, 40)
+              setTimeout(sendNext, SEND_INTERVAL)
             } else if (isFirst) {
               // 单帧：发完 status=0 后还需补一个 status=2
               console.log('[ASR] 单帧，补发 status=2')
