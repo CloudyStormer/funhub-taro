@@ -1,87 +1,130 @@
 /**
- * 百度语音识别 (一句话识别)
- * 申请地址: https://console.bce.baidu.com/ai/#/ai/speech/app/list
- * 需要在微信后台 request 合法域名中添加:
- *   - https://aip.baidubce.com
- *   - https://vop.baidu.com
+ * 讯飞语音识别 (IAT - 语音听写)
+ * 支持中英文自动识别
+ * 申请地址: https://console.xfyun.cn/services/iat
+ * 需要在微信后台 socket 合法域名中添加:
+ *   wss://iat-api.xfyun.cn
  */
 import Taro from '@tarojs/taro'
+import CryptoJS from 'crypto-js'
 
-const BAIDU_API_KEY    = 'kcUIVjDL5APTizsTXS1zV9gG'
-const BAIDU_SECRET_KEY = 'hFtFtjKNOE3tv5nPbcr32m2iwKYXzEL0'
+const APP_ID     = 'fb74bf2a'                               // ← 讯飞 APPID
+const API_KEY    = 'a1ddd25040f6bd8a802a593289054510'       // ← 讯飞 APIKey
+const API_SECRET = 'YmUwZGRlZWRhMDU3ZjFkNjI4NjFlOGFj'     // ← 讯飞 APISecret
 
-let _token = null
-let _tokenExpiry = 0
+const CHUNK_SIZE = 1280  // 每帧 1280 字节 (40ms @ 16kHz)
 
-/** 获取 access_token（带本地缓存） */
-const getToken = () =>
-  new Promise((resolve, reject) => {
-    if (_token && Date.now() < _tokenExpiry) return resolve(_token)
-    Taro.request({
-      url: 'https://aip.baidubce.com/oauth/2.0/token',
-      method: 'POST',
-      header: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      data: `grant_type=client_credentials&client_id=${BAIDU_API_KEY}&client_secret=${BAIDU_SECRET_KEY}`,
-      success: (res) => {
-        if (res.data?.access_token) {
-          _token = res.data.access_token
-          _tokenExpiry = Date.now() + (res.data.expires_in - 300) * 1000
-          resolve(_token)
-        } else {
-          reject(new Error('Token失败:' + JSON.stringify(res.data)))
-        }
-      },
-      fail: (err) => reject(new Error('Token网络错误:' + err.errMsg)),
-    })
-  })
+/** 生成带鉴权的 WebSocket URL */
+const buildAuthUrl = () => {
+  const date = new Date().toUTCString()
+  const host = 'iat-api.xfyun.cn'
+  const path = '/v2/iat'
+  const signOrigin = `host: ${host}\ndate: ${date}\nPOST ${path} HTTP/1.1`
+  const signature  = CryptoJS.enc.Base64.stringify(
+    CryptoJS.HmacSHA256(signOrigin, API_SECRET)
+  )
+  const authOrigin = `api_key="${API_KEY}", algorithm="hmac-sha256", headers="host date request-line", signature="${signature}"`
+  const authorization = CryptoJS.enc.Base64.stringify(
+    CryptoJS.enc.Utf8.parse(authOrigin)
+  )
+  return `wss://${host}${path}?authorization=${encodeURIComponent(authorization)}&date=${encodeURIComponent(date)}&host=${host}`
+}
 
 /**
- * 将录音文件转为文字
+ * 将录音文件转为文字（中英文均可识别）
  * @param {string} filePath  RecorderManager onStop 返回的 tempFilePath
  * @returns {Promise<string>} 识别出的文字
  */
-export const transcribeAudio = async (filePath) => {
-  // 1. 读取文件为 ArrayBuffer
-  const fileData = await new Promise((resolve, reject) => {
+export const transcribeAudio = (filePath) =>
+  new Promise((resolve, reject) => {
+    // 1. 读取文件
     Taro.getFileSystemManager().readFile({
       filePath,
-      success: (res) => resolve(res.data),
       fail: (err) => reject(new Error('读取文件失败:' + err.errMsg)),
-    })
-  })
+      success: ({ data: buffer }) => {
+        const url = buildAuthUrl()
+        const ws  = Taro.connectSocket({ url, complete: () => {} })
 
-  // 2. base64 编码
-  const base64Audio = Taro.arrayBufferToBase64(fileData)
+        let finalText = ''
+        let resolved  = false
 
-  // 3. 获取 token
-  const token = await getToken()
-
-  // 4. 调用识别接口
-  const result = await new Promise((resolve, reject) => {
-    Taro.request({
-      url: 'https://vop.baidu.com/server_api',
-      method: 'POST',
-      header: { 'Content-Type': 'application/json' },
-      data: {
-        format: 'pcm',
-        rate: 16000,
-        channel: 1,
-        cuid: 'funhub-taro-client',
-        token,
-        len: fileData.byteLength,
-        speech: base64Audio,
-        dev_pid: 1737,   // 1737=英语
-      },
-      success: (res) => {
-        if (res.data?.err_no === 0) {
-          resolve(res.data.result[0] ?? '')
-        } else {
-          reject(new Error(`ASR错误${res.data?.err_no}:${res.data?.err_msg}`))
+        const done = (text, err) => {
+          if (resolved) return
+          resolved = true
+          try { ws.close() } catch (_) {}
+          err ? reject(err) : resolve(text)
         }
+
+        ws.onError((e) =>
+          done(null, new Error('WS错误:' + (e.errMsg || JSON.stringify(e))))
+        )
+
+        ws.onOpen(() => {
+          let offset = 0
+          const total = buffer.byteLength
+
+          const sendNext = () => {
+            if (offset > total) return
+            const end      = Math.min(offset + CHUNK_SIZE, total)
+            const isFirst  = offset === 0
+            const isLast   = end >= total
+            const chunk    = buffer.slice(offset, end)
+            const audio    = Taro.arrayBufferToBase64(chunk)
+
+            const frame = {
+              data: {
+                status:   isFirst ? 0 : isLast ? 2 : 1,
+                format:   'audio/L16;rate=16000',
+                encoding: 'raw',
+                audio,
+              },
+            }
+
+            // 第一帧附带参数
+            if (isFirst) {
+              frame.common   = { app_id: APP_ID }
+              frame.business = {
+                language:  'zh_cn',   // zh_cn 自动识别中英混合
+                domain:    'iat',
+                accent:    'mandarin',
+                vad_eos:   10000,
+                dwa:       'wpgs',    // 动态修正，提升准确率
+              }
+            }
+
+            ws.send({ data: JSON.stringify(frame) })
+            offset = end
+            if (!isLast) setTimeout(sendNext, 40)
+          }
+
+          sendNext()
+        })
+
+        ws.onMessage(({ data: raw }) => {
+          let res
+          try { res = JSON.parse(raw) } catch (_) { return }
+
+          if (res.code !== 0) {
+            done(null, new Error(`讯飞错误${res.code}:${res.message}`))
+            return
+          }
+
+          // 累积识别结果
+          const ws_list = res.data?.result?.ws || []
+          const piece   = ws_list
+            .map(w => w.cw?.map(c => c.w).join('') ?? '')
+            .join('')
+
+          if (res.data?.result?.pgs === 'rpl') {
+            // rpl: 替换模式，覆盖上一段
+            finalText = finalText.slice(0, -finalText.split('').pop()?.length || 0)
+          }
+          finalText += piece
+
+          if (res.data?.status === 2) {
+            done(finalText.trim() || '')
+          }
+        })
       },
-      fail: (err) => reject(new Error('ASR网络错误:' + err.errMsg)),
     })
   })
-
-  return result
-}
