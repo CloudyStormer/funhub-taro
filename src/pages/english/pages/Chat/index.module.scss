@@ -103,3 +103,45 @@
   color: rgb(148, 163, 184);
   font-weight: 500;
 }
+
+/* ── 打字中动画 ── */
+.typingRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 4px 16px 8px;
+}
+
+.typingAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgb(241, 245, 249);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.typingBubble {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgb(255, 255, 255);
+  border-radius: 18px 18px 18px 4px;
+  padding: 12px 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0);   opacity: 0.4; }
+  40%            { transform: translateY(-6px); opacity: 1;   }
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgb(115, 44, 255);
+  animation: bounce 1.2s ease-in-out infinite;
+}
