@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, ScrollView } from '@tarojs/components';
+import Taro from '@tarojs/taro';
 import Header from '../../components/Header';
 import BottomTabBar from '../../components/BottomTabBar';
 import RetrospectivePage from '../Retrospective';
@@ -11,13 +12,16 @@ import Chat from '../Chat';
 import styles from './index.module.scss';
 
 const Frame = () => {
+  // 从 Storage 恢复已选词库，避免每次都弹窗
+  const [activeVocab, setActiveVocab]       = useState(() => Taro.getStorageSync('active_vocab') || null);
   const [activeTab, setActiveTab]           = useState('dashboard');
   const [modalVisible, setModalVisible]     = useState(false);
-  const [activeVocab, setActiveVocab]       = useState(null);
   const [pendingTab, setPendingTab]         = useState(null);
   const [showLearning, setShowLearning]     = useState(false);
   const [showChat, setShowChat]             = useState(false);
   const [learningSceneId, setLearningSceneId] = useState('office');
+  // 进入 Chat 时携带的情景信息
+  const [chatConfig, setChatConfig]         = useState({ sceneTitle: '', words: [] });
 
   const openModalAlways = () => setModalVisible(true);
 
@@ -27,6 +31,7 @@ const Frame = () => {
   const goToLearning = (sceneId) => {
     const id = sceneId || randomScene();
     if (activeVocab) {
+      // 已选过词库，直接进入准备页，不再弹窗
       setLearningSceneId(id);
       setShowLearning(true);
     } else {
@@ -47,6 +52,7 @@ const Frame = () => {
 
   const handleVocabSelect = (id) => {
     setActiveVocab(id);
+    Taro.setStorageSync('active_vocab', id);  // 持久化，下次不再弹窗
     setModalVisible(false);
     if (pendingTab) {
       setActiveTab(pendingTab);
@@ -54,13 +60,13 @@ const Frame = () => {
     }
   };
 
-  // 直接开始 → 进入 Chat
-  const handleStart = () => {
+  // 直接开始 → LearningReadiness 传来 { words, sceneTitle }
+  const handleStart = ({ words, sceneTitle }) => {
+    setChatConfig({ words, sceneTitle });
     setShowLearning(false);
     setShowChat(true);
   };
 
-  // Chat 返回 → 回到 Dashboard
   const handleChatBack = () => {
     setShowChat(false);
   };
@@ -85,7 +91,11 @@ const Frame = () => {
 
         {/* ── Chat 页（最高优先级，全屏覆盖） ── */}
         {showChat ? (
-          <Chat onBack={handleChatBack} />
+          <Chat
+            onBack={handleChatBack}
+            sceneTitle={chatConfig.sceneTitle}
+            words={chatConfig.words}
+          />
         ) : showLearning ? (
           /* ── 学习准备页 ── */
           <LearningReadiness

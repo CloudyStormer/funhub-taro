@@ -187,7 +187,7 @@ const LearningReadiness = ({ sceneId = 'office', onBack, onStart }) => {
           <View className={styles.btnSecondary} onClick={revealAll}>
             提前学习这些词
           </View>
-          <View className={styles.btnPrimary} onClick={onStart}>
+          <View className={styles.btnPrimary} onClick={() => onStart({ words: currentWords, sceneTitle: scene.title })}>
             直接开始 →
           </View>
         </View>

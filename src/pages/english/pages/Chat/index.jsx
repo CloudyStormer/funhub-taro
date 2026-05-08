@@ -3,11 +3,11 @@ import { View, Text, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
+import { speakText } from '../../utils/tts'
 import styles from './index.module.scss'
 
 const API_BASE = 'https://www.hgshouse.com/api'
 
-/** 获取或生成持久 userId（存 Storage） */
 const getUserId = () => {
   let uid = Taro.getStorageSync('chat_user_id')
   if (!uid) {
@@ -22,56 +22,74 @@ const makeTime = () => {
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
 }
 
-const Chat = ({ onBack, sceneTitle = 'Business English', level = 'B1' }) => {
-  const [messages, setMessages] = useState([
-    {
-      id: 'init-1',
-      text: "Hello! I'm your AI English tutor. What would you like to practice today?",
-      sender: 'ai',
-      time: makeTime(),
-    },
-  ])
+const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' }) => {
+  const [messages, setMessages]   = useState([])
   const [isLoading, setIsLoading] = useState(false)
-  const [lastMsgId, setLastMsgId] = useState('msg-init-1')
-  const userIdRef = useRef(getUserId())
+  const [lastMsgId, setLastMsgId] = useState('msg-bottom')
+  const [scrollTop, setScrollTop] = useState(0)
+  const sessionIdRef = useRef('')
+  const userIdRef    = useRef(getUserId())
+  const wordsStr     = words.map(w => w.word || w).join(',')
 
   useEffect(() => {
-    const last = messages[messages.length - 1]
-    if (last) setLastMsgId(`msg-${last.id}`)
+    const timer = setTimeout(() => {
+      const last = messages[messages.length - 1]
+      if (last) {
+        setLastMsgId(`msg-${last.id}`)
+      }
+      setScrollTop(prev => prev + 100000)
+    }, 80)
+    return () => clearTimeout(timer)
   }, [messages])
 
-  const handleSend = async (text) => {
-    if (!text?.trim() || isLoading) return
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setScrollTop(prev => prev + 100000)
+      setLastMsgId('msg-bottom')
+    }, 140)
+    return () => clearTimeout(timer)
+  }, [messages.length, isLoading])
 
-    const uid = Date.now().toString()
-    const userMsg = { id: uid, text: text.trim(), sender: 'user', time: makeTime() }
-    setMessages(prev => [...prev, userMsg])
+  // 进入对话后立即发一次空消息，让 AI 开场白
+  useEffect(() => {
+    callApi('')
+  }, [])   // eslint-disable-line react-hooks/exhaustive-deps
+
+  const callApi = async (text) => {
     setIsLoading(true)
-
     try {
       const result = await new Promise((resolve, reject) => {
         Taro.request({
-          url: `${API_BASE}/ai/chat`,
+          url:    `${API_BASE}/ai/topic-agent-chat`,
           method: 'POST',
           header: { 'Content-Type': 'application/json' },
           data: {
-            user_id: userIdRef.current,
-            message: text.trim(),
+            user_id:    userIdRef.current,
+            session_id: sessionIdRef.current,  // 首次为空字符串，服务端自动建会话
+            type:       sceneTitle,
+            words:      wordsStr,
+            message:    text,
             level,
           },
           success: resolve,
-          fail: reject,
+          fail:    reject,
         })
       })
 
       if (result.statusCode === 200 && result.data?.reply) {
+        // 保存 session_id，后续复用
+        if (result.data.session_id) {
+          sessionIdRef.current = result.data.session_id
+        }
         const aiMsg = {
-          id: (Date.now() + 1).toString(),
-          text: result.data.reply,
+          id:     Date.now().toString(),
+          text:   result.data.reply,
           sender: 'ai',
-          time: makeTime(),
+          time:   makeTime(),
         }
         setMessages(prev => [...prev, aiMsg])
+        // AI 回复后自动朗读
+        speakText(result.data.reply)
       } else {
         throw new Error(`HTTP ${result.statusCode}`)
       }
@@ -81,6 +99,13 @@ const Chat = ({ onBack, sceneTitle = 'Business English', level = 'B1' }) => {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleSend = async (text) => {
+    if (!text?.trim() || isLoading) return
+    const userMsg = { id: Date.now().toString(), text: text.trim(), sender: 'user', time: makeTime() }
+    setMessages(prev => [...prev, userMsg])
+    await callApi(text.trim())
   }
 
   return (
@@ -93,7 +118,7 @@ const Chat = ({ onBack, sceneTitle = 'Business English', level = 'B1' }) => {
         <View className={styles.headerCenter}>
           <View className={styles.titleRow}>
             <View className={styles.onlineDot} />
-            <Text className={styles.title}>English AI Tutor</Text>
+            <Text className={styles.title}>{sceneTitle || 'AI Tutor'}</Text>
           </View>
           <Text className={styles.subtitle}>Powered by DeepSeek</Text>
         </View>
@@ -103,7 +128,13 @@ const Chat = ({ onBack, sceneTitle = 'Business English', level = 'B1' }) => {
       </View>
 
       {/* Message List */}
-      <ScrollView scrollY className={styles.msgArea} scrollIntoView={lastMsgId}>
+      <ScrollView
+        scrollY
+        scrollWithAnimation
+        className={styles.msgArea}
+        scrollIntoView={lastMsgId}
+        scrollTop={scrollTop}
+      >
         <View className={styles.dateSep}>
           <Text className={styles.dateText}>Today</Text>
         </View>
@@ -126,7 +157,7 @@ const Chat = ({ onBack, sceneTitle = 'Business English', level = 'B1' }) => {
           </View>
         )}
 
-        <View id={lastMsgId} style={{ height: '8px' }} />
+        <View id='msg-bottom' style={{ height: '24px' }} />
       </ScrollView>
 
       {/* Input */}

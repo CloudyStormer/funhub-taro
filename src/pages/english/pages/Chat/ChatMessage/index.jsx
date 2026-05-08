@@ -6,7 +6,7 @@ const ChatMessage = ({ message }) => {
   const isUser = message.sender === 'user'
 
   return (
-    <View className={`${styles.row} ${isUser ? styles.rowUser : styles.rowAi}`}>
+    <View id={`msg-${message.id}`} className={`${styles.row} ${isUser ? styles.rowUser : styles.rowAi}`}>
       {/* Avatar */}
       <View className={`${styles.avatar} ${isUser ? styles.avatarUser : styles.avatarAi}`}>
         <Text style={{ fontSize: '14px' }}>{isUser ? '👤' : '🤖'}</Text>
