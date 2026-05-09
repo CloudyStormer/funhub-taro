@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { View, Text, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
-import { speakText } from '../../utils/tts'
+import { speakText, stopSpeaking } from '../../utils/tts'
 import styles from './index.module.scss'
 
 const API_BASE = 'https://www.hgshouse.com/api'
@@ -25,37 +25,73 @@ const makeTime = () => {
 const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' }) => {
   const [messages, setMessages]   = useState([])
   const [isLoading, setIsLoading] = useState(false)
-  const [lastMsgId, setLastMsgId] = useState('msg-bottom')
   const [scrollTop, setScrollTop] = useState(0)
-  const sessionIdRef = useRef('')
-  const userIdRef    = useRef(getUserId())
-  const wordsStr     = words.map(w => w.word || w).join(',')
 
+  const sessionIdRef   = useRef('')
+  const userIdRef      = useRef(getUserId())
+  const typeTimerRef   = useRef(null)
+  const streamingRef   = useRef(null)
+  const isLoadingRef   = useRef(false)   // ← 用 ref 供 useCallback 闭包读取，避免陈旧值
+  const wordsStr       = words.map(w => w.word || w).join(',')
+
+  // 只在 messages 变化时滚底（不依赖 isLoading，避免触发 ChatInput 重渲染）
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const last = messages[messages.length - 1]
-      if (last) {
-        setLastMsgId(`msg-${last.id}`)
-      }
-      setScrollTop(prev => prev + 100000)
-    }, 80)
-    return () => clearTimeout(timer)
+    const t = setTimeout(() => setScrollTop(v => v + 99999), 60)
+    return () => clearTimeout(t)
   }, [messages])
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setScrollTop(prev => prev + 100000)
-      setLastMsgId('msg-bottom')
-    }, 140)
-    return () => clearTimeout(timer)
-  }, [messages.length, isLoading])
-
-  // 进入对话后立即发一次空消息，让 AI 开场白
-  useEffect(() => {
     callApi('')
-  }, [])   // eslint-disable-line react-hooks/exhaustive-deps
+    return () => clearTypewriter()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── 打字机控制 ── */
+
+  const clearTypewriter = () => {
+    if (typeTimerRef.current) {
+      clearInterval(typeTimerRef.current)
+      typeTimerRef.current = null
+    }
+  }
+
+  /** 立刻把当前正在打字的消息显示完整，然后清除状态 */
+  const flushTypewriter = () => {
+    clearTypewriter()
+    if (streamingRef.current) {
+      const { msgId, fullText } = streamingRef.current
+      setMessages(prev => prev.map(m =>
+        m.id === msgId ? { ...m, text: fullText, streaming: false } : m
+      ))
+      streamingRef.current = null
+    }
+  }
+
+  /** 打字机动画：逐字填充消息 */
+  const typewriter = (fullText, msgId) => {
+    clearTypewriter()
+    streamingRef.current = { msgId, fullText }
+
+    const chars = Array.from(fullText)
+    const delay = Math.min(120, Math.max(30, 7000 / chars.length))
+    let i = 0
+
+    typeTimerRef.current = setInterval(() => {
+      i++
+      const partial = chars.slice(0, i).join('')
+      setMessages(prev => prev.map(m =>
+        m.id === msgId ? { ...m, text: partial, streaming: i < chars.length } : m
+      ))
+      if (i >= chars.length) {
+        clearTypewriter()
+        streamingRef.current = null
+      }
+    }, delay)
+  }
+
+  /* ── API 调用 ── */
 
   const callApi = async (text) => {
+    isLoadingRef.current = true
     setIsLoading(true)
     try {
       const result = await new Promise((resolve, reject) => {
@@ -65,7 +101,7 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
           header: { 'Content-Type': 'application/json' },
           data: {
             user_id:    userIdRef.current,
-            session_id: sessionIdRef.current,  // 首次为空字符串，服务端自动建会话
+            session_id: sessionIdRef.current,
             type:       sceneTitle,
             words:      wordsStr,
             message:    text,
@@ -77,19 +113,32 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
       })
 
       if (result.statusCode === 200 && result.data?.reply) {
-        // 保存 session_id，后续复用
         if (result.data.session_id) {
           sessionIdRef.current = result.data.session_id
         }
-        const aiMsg = {
-          id:     Date.now().toString(),
-          text:   result.data.reply,
-          sender: 'ai',
-          time:   makeTime(),
+
+        const reply = result.data.reply
+        const msgId = Date.now().toString()
+
+        // 插入空气泡（显示光标，等待打字机）
+        setMessages(prev => [...prev, {
+          id: msgId, text: '', streaming: true, sender: 'ai', time: makeTime(),
+        }])
+
+        // 打字机只在音频真正开始播放时才启动
+        let typewriterStarted = false
+        const startTypewriter = () => {
+          if (typewriterStarted) return
+          typewriterStarted = true
+          typewriter(reply, msgId)
         }
-        setMessages(prev => [...prev, aiMsg])
-        // AI 回复后自动朗读
-        speakText(result.data.reply)
+
+        // TTS：音频 onPlay 时触发打字机
+        speakText(reply, { onPlay: startTypewriter })
+
+        // 保险 fallback：2s 后如果 TTS 还没 onPlay（网络慢/失败），强制开始打字
+        setTimeout(startTypewriter, 2000)
+
       } else {
         throw new Error(`HTTP ${result.statusCode}`)
       }
@@ -97,16 +146,23 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
       console.error('[Chat] API error:', err)
       Taro.showToast({ title: '网络错误，请重试', icon: 'none', duration: 2000 })
     } finally {
+      isLoadingRef.current = false
       setIsLoading(false)
     }
   }
 
-  const handleSend = async (text) => {
-    if (!text?.trim() || isLoading) return
-    const userMsg = { id: Date.now().toString(), text: text.trim(), sender: 'user', time: makeTime() }
-    setMessages(prev => [...prev, userMsg])
+  /* ── 发送消息（useCallback：引用稳定，避免 ChatInput 因 handleSend 变化而重渲染） ── */
+  const handleSend = useCallback(async (text) => {
+    if (!text?.trim() || isLoadingRef.current) return
+
+    flushTypewriter()
+    stopSpeaking()
+
+    setMessages(prev => [...prev, {
+      id: Date.now().toString(), text: text.trim(), sender: 'user', time: makeTime(),
+    }])
     await callApi(text.trim())
-  }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <View className={styles.page}>
@@ -132,7 +188,6 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
         scrollY
         scrollWithAnimation
         className={styles.msgArea}
-        scrollIntoView={lastMsgId}
         scrollTop={scrollTop}
       >
         <View className={styles.dateSep}>
@@ -143,7 +198,6 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
           <ChatMessage key={msg.id} message={msg} />
         ))}
 
-        {/* 打字中动画 */}
         {isLoading && (
           <View className={styles.typingRow}>
             <View className={styles.typingAvatar}>
@@ -157,10 +211,9 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
           </View>
         )}
 
-        <View id='msg-bottom' style={{ height: '24px' }} />
+        <View style={{ height: '24px' }} />
       </ScrollView>
 
-      {/* Input */}
       <ChatInput onSendMessage={handleSend} />
     </View>
   )

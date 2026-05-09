@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, memo } from 'react'
 import { View, Text, Textarea } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { transcribeAudio } from '../../../utils/asr'
@@ -229,4 +229,4 @@ const ChatInput = ({ onSendMessage = () => {} }) => {
   )
 }
 
-export default ChatInput
+export default memo(ChatInput)

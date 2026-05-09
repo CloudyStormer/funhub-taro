@@ -26,6 +26,10 @@ const ChatMessage = ({ message }) => {
           ) : (
             <Text className={`${styles.msgText} ${isUser ? styles.msgTextUser : styles.msgTextAi}`}>
               {message.text}
+              {/* 打字机光标：streaming 期间显示 */}
+              {message.streaming && (
+                <Text className={styles.cursor}>|</Text>
+              )}
             </Text>
           )}
         </View>
