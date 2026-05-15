@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Text } from '@tarojs/components'
 import styles from './index.module.scss'
 
-const ChatMessage = ({ message }) => {
+const ChatMessage = ({ message, onStop = () => {} }) => {
   const isUser = message.sender === 'user'
 
   return (
@@ -14,7 +14,10 @@ const ChatMessage = ({ message }) => {
 
       {/* Bubble + timestamp */}
       <View className={styles.bubbleWrap}>
-        <View className={`${styles.bubble} ${isUser ? styles.bubbleUser : styles.bubbleAi}`}>
+        <View
+          className={`${styles.bubble} ${isUser ? styles.bubbleUser : styles.bubbleAi}`}
+          onClick={onStop}
+        >
           {message.isAudio ? (
             <View className={styles.audioMsg}>
               <Text className={`${styles.audioIcon} ${isUser ? styles.audioIconUser : ''}`}>🔊</Text>

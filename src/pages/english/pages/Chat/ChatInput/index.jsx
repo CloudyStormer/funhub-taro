@@ -7,7 +7,7 @@ import styles from './index.module.scss'
 
 const CANCEL_THRESHOLD = 80
 
-const ChatInput = ({ onSendMessage = () => {} }) => {
+const ChatInput = ({ onSendMessage = () => {}, onInterrupt = () => {} }) => {
   const [mode, setMode]                     = useState('keyboard')
   const [inputText, setInputText]           = useState('')
   const [isRecording, setIsRecording]       = useState(false)
@@ -117,7 +117,7 @@ const ChatInput = ({ onSendMessage = () => {} }) => {
   /* ── 触摸事件：直接同步启动录音 ── */
   const onTouchStart = (e) => {
     if (!hasMicPerm.current || !rmRef.current || isTranscribing) return
-    stopSpeaking()   // 录音前先停掉 TTS 播放，避免 WebSocket 冲突
+    onInterrupt()            // 中断打字机动画 + 停止TTS播放
     isPressed.current   = true
     cancelRef.current   = false
     pressStartY.current = e.touches[0].clientY

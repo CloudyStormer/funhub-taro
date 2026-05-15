@@ -36,6 +36,7 @@ const playBuffer = (arrayBuffer, opts = {}) => {
 
       _ctx = Taro.createInnerAudioContext()
       _ctx.obeyMuteSwitch = false
+      _ctx.playbackRate   = 1.1   // 加快 10%
       _ctx.src = tempPath
 
       _ctx.onCanplay(() => {

@@ -80,6 +80,7 @@ const Frame = () => {
           <Dashboard
             onOpenModal={() => goToLearning('office')}
             onSelectScenario={(id) => goToLearning(id)}
+            modalOpen={modalVisible}
           />
         );
     }

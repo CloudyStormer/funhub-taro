@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { View, Text, Canvas, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import styles from './index.module.scss'
@@ -122,12 +122,16 @@ const drawChart = (activeIdx = -1) => {
 }
 
 const MemorySection = () => {
-  const [showHint, setShowHint]   = useState(true)
-  const [activeIdx, setActiveIdx] = useState(-1)
+  const [showHint, setShowHint]     = useState(true)
+  const [activeIdx, setActiveIdx]   = useState(-1)
   const [scrollLeft, setScrollLeft] = useState(0)
+  const activeIdxRef = useRef(-1)
+  const drawTimerRef = useRef(null)
 
   useEffect(() => {
-    setTimeout(() => drawChart(-1), 300)
+    // 600ms 保证 WeChat 原生 Canvas 挂载完毕后再绘图
+    drawTimerRef.current = setTimeout(() => drawChart(-1), 600)
+    return () => clearTimeout(drawTimerRef.current)
   }, [])
 
   const handleScroll = (e) => {
@@ -138,13 +142,12 @@ const MemorySection = () => {
 
   // 触摸 canvas → 高亮最近的数据列
   const handleCanvasTouch = (e) => {
-    // e.touches[0].x 是相对 canvas 元素的坐标（WeChat 2.15.0+）
-    // 若拿不到则用 clientX + scrollLeft 估算
     const rawX = e.touches[0].x != null
       ? e.touches[0].x
       : e.touches[0].clientX + scrollLeft
     const col = Math.round((rawX - PAD.left - COL_W / 2) / COL_W)
     const idx = Math.max(0, Math.min(data.length - 1, col))
+    activeIdxRef.current = idx
     setActiveIdx(idx)
     drawChart(idx)
   }
@@ -179,6 +182,7 @@ const MemorySection = () => {
             className={styles.scrollArea}
             onScroll={handleScroll}
           >
+            {/* Canvas：由父级 Dashboard 控制整体卸载，此处始终渲染 */}
             <Canvas
               canvasId="ebbinghaus"
               style={{ width: `${CHART_W}px`, height: `${CHART_H}px`, display: 'block' }}

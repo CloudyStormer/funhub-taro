@@ -5,11 +5,15 @@ import ScenarioSection from './ScenarioSection';
 import MemorySection from './MemorySection';
 import ReviewSection from './ReviewSection';
 
-const Dashboard = ({ onOpenModal, onSelectScenario }) => (
+const Dashboard = ({ onOpenModal, onSelectScenario, modalOpen = false }) => (
   <View>
     <ProgressSection onOpenModal={onOpenModal} />
     <ScenarioSection onOpenModal={onOpenModal} onSelectScenario={onSelectScenario} />
-    <MemorySection />
+    {/* 弹窗打开时卸载整个 MemorySection（原生 Canvas 必须完全卸载才能被弹窗遮挡） */}
+    {modalOpen
+      ? <View style={{ height: '260px' }} />
+      : <MemorySection />
+    }
     <ReviewSection />
   </View>
 );

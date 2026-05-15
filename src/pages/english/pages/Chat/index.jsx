@@ -66,6 +66,22 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
     }
   }
 
+  /** 按下语音按钮 / 点击气泡时：停止TTS + 中断打字机（引用稳定，传给子组件） */
+  const handleInterrupt = useCallback(() => {
+    if (typeTimerRef.current) {
+      clearInterval(typeTimerRef.current)
+      typeTimerRef.current = null
+    }
+    if (streamingRef.current) {
+      const { msgId, fullText } = streamingRef.current
+      setMessages(prev => prev.map(m =>
+        m.id === msgId ? { ...m, text: fullText, streaming: false } : m
+      ))
+      streamingRef.current = null
+    }
+    stopSpeaking()
+  }, []) // 只访问 ref 和稳定的 setMessages，deps 为空
+
   /** 打字机动画：逐字填充消息 */
   const typewriter = (fullText, msgId) => {
     clearTypewriter()
@@ -195,7 +211,7 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
         </View>
 
         {messages.map(msg => (
-          <ChatMessage key={msg.id} message={msg} />
+          <ChatMessage key={msg.id} message={msg} onStop={handleInterrupt} />
         ))}
 
         {isLoading && (
@@ -214,7 +230,7 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
         <View style={{ height: '24px' }} />
       </ScrollView>
 
-      <ChatInput onSendMessage={handleSend} />
+      <ChatInput onSendMessage={handleSend} onInterrupt={handleInterrupt} />
     </View>
   )
 }
