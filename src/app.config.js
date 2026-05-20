@@ -2,6 +2,7 @@ export default defineAppConfig({
   pages: [
     'pages/home/index',
     'pages/english/index',
+    'pages/aime/index',
     'pages/painting/index',
     'pages/fitness/index',
     'pages/tianjin/index',

@@ -15,6 +15,13 @@ const BIRDS = [
   { n: 8, w: 22, h: 11, top: '38%', dir: 'rl', dur: 12, delay: 7.4 },
 ]
 
+const getReturnDays = () => {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const target = new Date(now.getFullYear(), 5, 22)
+  return Math.max(0, Math.ceil((target.getTime() - today.getTime()) / 86400000))
+}
+
 export default function Home() {
   return (
     <View className='home'>
@@ -90,13 +97,14 @@ export default function Home() {
                 isUnderConstruction
               />
               <ModuleCard
-                title='津门风物'
-                subtitle='美食文旅'
-                emoji='📍'
-                url='/pages/tianjin/index'
-                bgColor='rgba(230,57,40,0.1)'
-                iconBgColor='rgba(230,57,40,1)'
-                isUnderConstruction
+                title={"\u5f52\u6765" + getReturnDays() + "\u5929"}
+                subtitle={"\u6211\u4e00\u76f4\u90fd\u5728"}
+                emoji={"\u2764"}
+                url='/pages/aime/index'
+                bgColor='rgba(255,232,236,0.72)'
+                iconBgColor='rgba(216,94,116,1)'
+                decorationEmoji={"\u5f52"}
+                glowVariant='pink'
               />
             </View>
           </View>
