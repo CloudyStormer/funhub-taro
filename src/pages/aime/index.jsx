@@ -2,11 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Picker, ScrollView, Text, View } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import ChatInput from '../english/pages/Chat/ChatInput'
-import { speakText, stopSpeaking } from '../english/utils/tts'
+import { speakText, stopSpeaking } from './utils/tts'
 import './index.scss'
 
-const API_BASE = 'https://www.hgshouse.com/api'
-// English uses /api as the public gateway; Aime backend keeps its own /api routes.
+const API_BASE = 'https://www.hgshouse.com/aimebridge'
 const AIME_PREFIX = '/api'
 
 const makeId = () => `${Date.now()}_${Math.random().toString(16).slice(2)}`

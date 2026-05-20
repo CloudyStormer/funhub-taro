@@ -103,7 +103,6 @@ export default function Home() {
                 url='/pages/aime/index'
                 bgColor='rgba(255,232,236,0.72)'
                 iconBgColor='rgba(216,94,116,1)'
-                decorationEmoji={"\u5f52"}
                 glowVariant='pink'
               />
             </View>
