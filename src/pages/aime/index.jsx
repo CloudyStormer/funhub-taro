@@ -39,6 +39,11 @@ const paths = {
     history: `${API_BASE}${AIME_PREFIX}/training/history`,
     message: `${API_BASE}${AIME_PREFIX}/training/message`,
   },
+  voiceClone: {
+    trainText: `${API_BASE}${AIME_PREFIX}/voice-clone/train-text`,
+    train: `${API_BASE}${AIME_PREFIX}/voice-clone/train`,
+    result: `${API_BASE}${AIME_PREFIX}/voice-clone/result`,
+  },
   review: `${API_BASE}${AIME_PREFIX}/chat/review`,
 }
 
@@ -67,6 +72,33 @@ const uploadImageMessage = ({ url, filePath, content = '我发了一张图片。
         content,
       },
       timeout: 30000,
+      success: (res) => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          try {
+            resolve(JSON.parse(res.data))
+          } catch (err) {
+            reject(err)
+          }
+        } else {
+          reject(new Error(`HTTP ${res.statusCode}`))
+        }
+      },
+      fail: reject,
+    })
+  })
+
+const uploadVoiceCloneAudio = ({ filePath, textId, textSegId }) =>
+  new Promise((resolve, reject) => {
+    Taro.uploadFile({
+      url: paths.voiceClone.train,
+      filePath,
+      name: 'audio',
+      formData: {
+        textId,
+        textSegId,
+        resourceName: 'aime-daily-voice',
+      },
+      timeout: 60000,
       success: (res) => {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           try {
@@ -117,6 +149,14 @@ const openAimeRoute = (url) => {
   Taro.navigateTo({ url })
 }
 
+const getVoiceSegmentId = (segment, index = 0) => (
+  segment?.textSegId || segment?.segId || segment?.id || segment?.text_seg_id || index + 1
+)
+
+const getVoiceSegmentText = (segment) => (
+  segment?.text || segment?.content || segment?.segText || segment?.textSeg || segment?.txt || ''
+)
+
 const ModeHome = () => (
   <View className='aime-page aime-home'>
     <View className='aime-hero'>
@@ -142,6 +182,14 @@ const ModeHome = () => (
         </View>
       </View>
 
+      <View className='aime-entry aime-entry--voice' onClick={() => openAimeRoute('/pages/aime/voice/index')}>
+        <Text className='aime-entry-icon'>声</Text>
+        <View className='aime-entry-copy'>
+          <Text className='aime-entry-title'>声音训练</Text>
+          <Text className='aime-entry-desc'>按讯飞一句话复刻文本录一段音，训练成功后“我在这儿”直接用这个声音。</Text>
+        </View>
+      </View>
+
       <View className='aime-entry aime-entry--review' onClick={() => openAimeRoute('/pages/aime/review/index')}>
         <Text className='aime-entry-icon'>顾</Text>
         <View className='aime-entry-copy'>
@@ -152,6 +200,242 @@ const ModeHome = () => (
     </View>
   </View>
 )
+
+export const VoiceCloneScreen = () => {
+  const [trainText, setTrainText] = useState(null)
+  const [selectedIndex, setSelectedIndex] = useState(0)
+  const [loadingText, setLoadingText] = useState(false)
+  const [recording, setRecording] = useState(false)
+  const [recordSec, setRecordSec] = useState(0)
+  const [audioPath, setAudioPath] = useState('')
+  const [task, setTask] = useState(null)
+  const [result, setResult] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [checking, setChecking] = useState(false)
+  const recorderRef = useRef(null)
+  const timerRef = useRef(null)
+
+  const segments = Array.isArray(trainText?.textSegs) ? trainText.textSegs : []
+  const activeSegment = segments[selectedIndex] || segments[0] || null
+  const activeTextId = trainText?.textId || 5001
+  const activeTextSegId = getVoiceSegmentId(activeSegment, selectedIndex)
+  const activeText = getVoiceSegmentText(activeSegment)
+
+  const clearRecordTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
+  }
+
+  const loadTrainText = useCallback(async () => {
+    setLoadingText(true)
+    try {
+      const data = await requestJson({ url: `${paths.voiceClone.trainText}?textId=5001`, method: 'GET' })
+      setTrainText(data)
+      setSelectedIndex(0)
+    } catch (err) {
+      console.error('[AimeVoice] train text error:', err)
+      Taro.showToast({ title: '训练文本没拉到，稍后再试', icon: 'none', duration: 2000 })
+    } finally {
+      setLoadingText(false)
+    }
+  }, [])
+
+  const stopRecord = useCallback(() => {
+    if (!recording) return
+    try {
+      recorderRef.current?.stop()
+    } catch (err) {
+      console.error('[AimeVoice] stop record error:', err)
+      setRecording(false)
+      clearRecordTimer()
+    }
+  }, [recording])
+
+  useEffect(() => {
+    const recorder = Taro.getRecorderManager()
+    recorderRef.current = recorder
+    recorder.onStop((res) => {
+      clearRecordTimer()
+      setRecording(false)
+      setRecordSec(Math.max(1, Math.round((res.duration || 0) / 1000)))
+      setAudioPath(res.tempFilePath || '')
+      setTask(null)
+      setResult(null)
+    })
+    recorder.onError((err) => {
+      console.error('[AimeVoice] recorder error:', err)
+      clearRecordTimer()
+      setRecording(false)
+      Taro.showToast({ title: '录音失败，重新试一下', icon: 'none', duration: 2000 })
+    })
+    loadTrainText()
+    return () => {
+      clearRecordTimer()
+      try {
+        recorder.stop()
+      } catch (err) {
+        // ignore cleanup stop failures
+      }
+    }
+  }, [loadTrainText])
+
+  useDidHide(stopRecord)
+  useUnload(stopRecord)
+
+  const startRecord = async () => {
+    if (recording) return
+    if (!activeText) {
+      Taro.showToast({ title: '先等训练文本加载出来', icon: 'none', duration: 2000 })
+      return
+    }
+
+    try {
+      await Taro.authorize({ scope: 'scope.record' })
+    } catch (err) {
+      Taro.showModal({
+        title: '需要麦克风权限',
+        content: '打开麦克风权限后才能录制复刻声音。',
+        confirmText: '去设置',
+        success: (res) => {
+          if (res.confirm) Taro.openSetting()
+        },
+      })
+      return
+    }
+
+    setAudioPath('')
+    setTask(null)
+    setResult(null)
+    setRecordSec(0)
+    setRecording(true)
+    clearRecordTimer()
+    timerRef.current = setInterval(() => setRecordSec((value) => value + 1), 1000)
+    recorderRef.current?.start({
+      duration: 60000,
+      sampleRate: 16000,
+      numberOfChannels: 1,
+      encodeBitRate: 48000,
+      format: 'mp3',
+    })
+  }
+
+  const submitTraining = async () => {
+    if (submitting) return
+    if (!audioPath) {
+      Taro.showToast({ title: '先录一段声音', icon: 'none', duration: 2000 })
+      return
+    }
+    setSubmitting(true)
+    try {
+      const data = await uploadVoiceCloneAudio({
+        filePath: audioPath,
+        textId: activeTextId,
+        textSegId: activeTextSegId,
+      })
+      setTask(data)
+      setResult(null)
+      Taro.showToast({ title: '已提交训练', icon: 'none', duration: 2000 })
+    } catch (err) {
+      console.error('[AimeVoice] submit error:', err)
+      Taro.showToast({ title: '提交失败，稍后再试', icon: 'none', duration: 2000 })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const checkResult = async () => {
+    if (checking) return
+    const taskId = task?.taskId || result?.taskId
+    if (!taskId) {
+      Taro.showToast({ title: '还没有训练任务', icon: 'none', duration: 2000 })
+      return
+    }
+    setChecking(true)
+    try {
+      const data = await requestJson({
+        url: `${paths.voiceClone.result}?taskId=${encodeURIComponent(taskId)}`,
+        method: 'GET',
+      })
+      setResult(data)
+      if (data.assetId) {
+        Taro.showToast({ title: '声音训练完成', icon: 'success', duration: 2000 })
+      } else if (data.failedDesc) {
+        Taro.showToast({ title: '训练失败，重新录一次', icon: 'none', duration: 2000 })
+      } else {
+        Taro.showToast({ title: '还在训练中', icon: 'none', duration: 2000 })
+      }
+    } catch (err) {
+      console.error('[AimeVoice] result error:', err)
+      Taro.showToast({ title: '查询失败，稍后再试', icon: 'none', duration: 2000 })
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  return (
+    <View className='aime-page aime-voice'>
+      <View className='aime-voice-head'>
+        <Text className='aime-kicker'>Voice Clone</Text>
+        <Text className='aime-title'>声音训练</Text>
+        <Text className='aime-subtitle'>照着文本自然读一遍，训练成功后“我在这儿”的回复会使用这个复刻声音。</Text>
+      </View>
+
+      <ScrollView className='aime-voice-scroll' scrollY enhanced showScrollbar={false}>
+        <View className='aime-voice-card'>
+          <View className='aime-voice-card-head'>
+            <Text className='aime-voice-label'>训练文本</Text>
+            <Text className='aime-voice-refresh' onClick={loadTrainText}>{loadingText ? '加载中' : '刷新'}</Text>
+          </View>
+          {segments.length > 1 && (
+            <View className='aime-voice-segments'>
+              {segments.map((segment, index) => (
+                <View
+                  key={getVoiceSegmentId(segment, index)}
+                  className={`aime-voice-segment ${index === selectedIndex ? 'aime-voice-segment--active' : ''}`}
+                  onClick={() => setSelectedIndex(index)}
+                >
+                  <Text>{index + 1}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+          <Text className='aime-voice-text'>{activeText || '正在加载讯飞训练文本...'}</Text>
+        </View>
+
+        <View className='aime-voice-card'>
+          <Text className='aime-voice-label'>录音</Text>
+          <Text className='aime-voice-hint'>尽量安静、自然、完整地读上面的文本，录完后提交训练。</Text>
+          <View className='aime-voice-meter'>
+            <Text>{recording ? `录音中 ${recordSec}s` : audioPath ? `已录制 ${recordSec}s` : '还没有录音'}</Text>
+          </View>
+          <View className='aime-voice-actions'>
+            <View className={`aime-voice-action ${recording ? 'aime-voice-action--danger' : ''}`} onClick={recording ? stopRecord : startRecord}>
+              <Text>{recording ? '停止录音' : '开始录音'}</Text>
+            </View>
+            <View className={`aime-voice-action aime-voice-action--primary ${(!audioPath || submitting) ? 'aime-voice-action--disabled' : ''}`} onClick={submitTraining}>
+              <Text>{submitting ? '提交中' : '提交训练'}</Text>
+            </View>
+          </View>
+        </View>
+
+        {(task || result) && (
+          <View className='aime-voice-card'>
+            <Text className='aime-voice-label'>训练任务</Text>
+            <Text className='aime-voice-info'>任务ID：{task?.taskId || result?.taskId}</Text>
+            {result?.trainStatus !== undefined && <Text className='aime-voice-info'>状态：{result.trainStatus}</Text>}
+            {result?.assetId && <Text className='aime-voice-success'>已生成音色：{result.assetId}</Text>}
+            {result?.failedDesc && <Text className='aime-voice-error'>{result.failedDesc}</Text>}
+            <View className={`aime-voice-action aime-voice-action--primary ${checking ? 'aime-voice-action--disabled' : ''}`} onClick={checkResult}>
+              <Text>{checking ? '查询中' : '查询训练结果'}</Text>
+            </View>
+          </View>
+        )}
+      </ScrollView>
+    </View>
+  )
+}
 
 const ChatMessage = ({ message, mode, onStop }) => {
   const isUser = message.sender === 'user'

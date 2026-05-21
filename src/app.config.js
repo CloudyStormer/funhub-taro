@@ -5,6 +5,7 @@ export default defineAppConfig({
     'pages/aime/index',
     'pages/aime/daily/index',
     'pages/aime/training/index',
+    'pages/aime/voice/index',
     'pages/aime/review/index',
     'pages/painting/index',
     'pages/fitness/index',
