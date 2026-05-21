@@ -5,7 +5,7 @@
 import Taro from '@tarojs/taro'
 import { isVoiceQuotaError, showVoiceQuotaToast } from '../../../utils/voiceError'
 
-const TTS_URL = 'https://www.hgshouse.com/api/tts'
+const TTS_URL = 'https://api.hgshouse.com/api/tts'
 
 // 当前播放的 InnerAudioContext
 let _ctx = null

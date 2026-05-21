@@ -6,7 +6,7 @@ import aimeAvatar from '../../assets/aime/avatar-you.jpg'
 import { speakText, stopSpeaking } from './utils/tts'
 import './index.scss'
 
-const API_BASE = 'https://www.hgshouse.com/aimebridge'
+const API_BASE = 'https://api.hgshouse.com/aimebridge'
 const AIME_PREFIX = '/api'
 const HISTORY_PAGE_SIZE = 50
 

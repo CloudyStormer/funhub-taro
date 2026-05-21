@@ -1,7 +1,7 @@
 import Taro from '@tarojs/taro'
 import { isVoiceQuotaError, showVoiceQuotaToast } from '../../../utils/voiceError'
 
-const TTS_URL = 'https://www.hgshouse.com/aimebridge/tts'
+const TTS_URL = 'https://api.hgshouse.com/aimebridge/tts'
 
 let audioContext = null
 

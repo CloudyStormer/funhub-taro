@@ -6,7 +6,7 @@ import ChatInput from '../../../../components/ChatInput'
 import { speakText, stopSpeaking } from '../../utils/tts'
 import styles from './index.module.scss'
 
-const API_BASE = 'https://www.hgshouse.com/api'
+const API_BASE = 'https://api.hgshouse.com/api'
 
 const getUserId = () => {
   let uid = Taro.getStorageSync('chat_user_id')
