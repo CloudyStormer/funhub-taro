@@ -184,15 +184,14 @@ const ChatInput = ({ onSendMessage = () => {}, onSendImage = () => {}, onInterru
     })
   }
 
-  const blockTouchScroll = (e) => {
+  const stopTouchBubble = (e) => {
     e?.stopPropagation?.()
-    e?.preventDefault?.()
   }
 
   /* ── 触摸事件：长按后才启动录音，短按不弹出“松开发送” ── */
   const onTouchStart = (e) => {
     if (!hasMicPerm.current || !rmRef.current || isTranscribing) return
-    blockTouchScroll(e)
+    stopTouchBubble(e)
     onInterrupt()            // 中断打字机动画 + 停止TTS播放
     clearTimeout(pressTimerRef.current)
     isPressed.current          = true
@@ -205,7 +204,7 @@ const ChatInput = ({ onSendMessage = () => {}, onSendImage = () => {}, onInterru
 
   const onTouchMove = (e) => {
     if (!isPressed.current) return
-    blockTouchScroll(e)
+    stopTouchBubble(e)
     const cancel = pressStartY.current - e.touches[0].clientY > CANCEL_THRESHOLD
     cancelRef.current = cancel
     if (hasStartedRecording.current) {
@@ -213,15 +212,26 @@ const ChatInput = ({ onSendMessage = () => {}, onSendImage = () => {}, onInterru
     }
   }
 
-  const onTouchEnd = (e) => {
+  const finishTouch = (e, shouldCancel = false) => {
     if (!isPressed.current) return
-    blockTouchScroll(e)
+    stopTouchBubble(e)
     clearTimeout(pressTimerRef.current)
     isPressed.current = false
+    if (shouldCancel) {
+      cancelRef.current = true
+    }
     if (!hasStartedRecording.current) return
     hasStartedRecording.current = false
     setIsCancelling(false)
     rmRef.current?.stop()
+  }
+
+  const onTouchEnd = (e) => {
+    finishTouch(e, false)
+  }
+
+  const onTouchCancel = (e) => {
+    finishTouch(e, true)
   }
 
   /* ── 颜色 ── */
@@ -230,11 +240,7 @@ const ChatInput = ({ onSendMessage = () => {}, onSendImage = () => {}, onInterru
   const vColor  = isCancelling ? 'rgba(248,71,33,1)'    : isRecording ? 'rgba(115,44,255,1)'    : 'rgba(10,17,32,1)'
 
   return (
-    <View
-      className={styles.wrap}
-      catchMove={isPressed.current || isRecording}
-      onTouchMove={isPressed.current || isRecording ? blockTouchScroll : undefined}
-    >
+    <View className={styles.wrap}>
       {/* 录音悬浮提示 */}
       {isRecording && (
         <View className={styles.recOverlay}>
@@ -284,11 +290,10 @@ const ChatInput = ({ onSendMessage = () => {}, onSendImage = () => {}, onInterru
             <View
               className={styles.voiceBtn}
               style={{ background: vBg, borderColor: vBorder }}
-              catchMove
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
-              onTouchCancel={onTouchEnd}
+              onTouchCancel={onTouchCancel}
             >
               <Text style={{ fontSize: '14px' }}>🎤</Text>
               <Text style={{ color: vColor, fontSize: '14px', fontWeight: '600' }}>
