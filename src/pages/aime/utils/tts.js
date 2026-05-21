@@ -96,6 +96,16 @@ const isProbablyTextError = (arrayBuffer) => {
   return text.startsWith('{') || text.startsWith('<') || /error|quota|额度|余额|不足|欠费/i.test(text)
 }
 
+const errorFromResponse = (arrayBuffer, statusCode) => {
+  const bodyText = decodeArrayBuffer(arrayBuffer).trim()
+  try {
+    const body = JSON.parse(bodyText)
+    return new Error(body?.detail || body?.message || `TTS HTTP ${statusCode}`)
+  } catch (_) {
+    return new Error(bodyText || `TTS HTTP ${statusCode}`)
+  }
+}
+
 const handleTtsUnavailable = (error, opts = {}) => {
   if (isVoiceQuotaError(error)) {
     showVoiceQuotaToast(Taro)
@@ -130,9 +140,8 @@ export const speakText = (text, opts = {}) => {
       if (res.statusCode === 200 && res.data && !isProbablyTextError(res.data)) {
         playBuffer(res.data, opts)
       } else {
-        const bodyText = decodeArrayBuffer(res.data)
-        const error = new Error(bodyText || `TTS HTTP ${res.statusCode}`)
-        console.error('[Aime TTS] api status:', res.statusCode, bodyText)
+        const error = errorFromResponse(res.data, res.statusCode)
+        console.error('[Aime TTS] api status:', res.statusCode, error.message)
         handleTtsUnavailable(error, opts)
       }
     },
