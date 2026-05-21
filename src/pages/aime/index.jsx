@@ -192,16 +192,21 @@ export const ChatScreen = ({ mode }) => {
   const [loadingOlder, setLoadingOlder] = useState(false)
   const [hasMoreHistory, setHasMoreHistory] = useState(false)
   const [scrollTop, setScrollTop] = useState(0)
+  const [showJumpToLatest, setShowJumpToLatest] = useState(false)
   const timerRef = useRef(null)
   const streamingRef = useRef(null)
   const loadingRef = useRef(false)
   const loadingOlderRef = useRef(false)
   const shouldStickToBottomRef = useRef(true)
+  const lastScrollTopRef = useRef(0)
   const isTraining = mode === 'training'
 
   useEffect(() => {
     if (!shouldStickToBottomRef.current) return undefined
-    const t = setTimeout(() => setScrollTop((v) => v + 99999), 60)
+    const t = setTimeout(() => {
+      setScrollTop((v) => v + 99999)
+      setShowJumpToLatest(false)
+    }, 60)
     return () => clearTimeout(t)
   }, [messages])
 
@@ -306,6 +311,20 @@ export const ChatScreen = ({ mode }) => {
     }
   }, [hasMoreHistory, messages, mode])
 
+  const handleChatScroll = useCallback((event) => {
+    const nextTop = event?.detail?.scrollTop || 0
+    if (nextTop < lastScrollTopRef.current - 80) {
+      setShowJumpToLatest(true)
+    }
+    lastScrollTopRef.current = nextTop
+  }, [])
+
+  const jumpToLatest = useCallback(() => {
+    shouldStickToBottomRef.current = true
+    setShowJumpToLatest(false)
+    setScrollTop((v) => v + 99999)
+  }, [])
+
   useEffect(() => {
     loadHistory()
     return () => {
@@ -400,6 +419,8 @@ export const ChatScreen = ({ mode }) => {
         scrollTop={scrollTop}
         upperThreshold={80}
         onScrollToUpper={loadOlderHistory}
+        onScroll={handleChatScroll}
+        onScrollToLower={() => setShowJumpToLatest(false)}
       >
         {loadingOlder && (
           <View className='aime-history-loading'>
@@ -419,6 +440,12 @@ export const ChatScreen = ({ mode }) => {
         )}
         <View className='aime-bottom-space' />
       </ScrollView>
+
+      {showJumpToLatest && (
+        <View className='aime-jump-latest' onClick={jumpToLatest}>
+          <Text>↓</Text>
+        </View>
+      )}
 
       <ChatInput onSendMessage={sendMessage} onSendImage={sendImage} onInterrupt={interrupt} />
     </View>
@@ -452,6 +479,17 @@ export const ReviewScreen = () => {
     const instruction = (text || '').trim()
     if (!instruction || asking) return
 
+    const id = makeId()
+    setFollowUps((prev) => [
+      ...prev,
+      {
+        id,
+        question: instruction,
+        answer: '',
+        relatedDialogues: [],
+        pending: true,
+      },
+    ])
     setAsking(true)
     try {
       const data = await requestJson({
@@ -463,17 +501,27 @@ export const ReviewScreen = () => {
           instruction,
         },
       })
-      setFollowUps((prev) => [
-        ...prev,
-        {
-          id: makeId(),
-          question: instruction,
-          answer: data?.answer || '',
-          relatedDialogues: data?.relatedDialogues || [],
-        },
-      ])
+      setFollowUps((prev) => prev.map((item) => (
+        item.id === id
+          ? {
+            ...item,
+            answer: data?.answer || '',
+            relatedDialogues: data?.relatedDialogues || [],
+            pending: false,
+          }
+          : item
+      )))
     } catch (err) {
       console.error('[Aime] review ask error:', err)
+      setFollowUps((prev) => prev.map((item) => (
+        item.id === id
+          ? {
+            ...item,
+            answer: '这次继续整理失败了，稍后再试一次。',
+            pending: false,
+          }
+          : item
+      )))
       Taro.showToast({ title: '追问暂时失败，再试一次', icon: 'none', duration: 2000 })
     } finally {
       setAsking(false)
@@ -498,6 +546,7 @@ export const ReviewScreen = () => {
           </View>
         </View>
 
+        <ScrollView className='aime-review-scroll' scrollY enhanced showScrollbar={false}>
         {summary ? (
           <View className='aime-review-result'>
             <Text className='aime-range'>{summary.rangeLabel}</Text>
@@ -538,23 +587,19 @@ export const ReviewScreen = () => {
             {followUps.map((item) => (
               <View key={item.id} className='aime-review-block aime-review-follow'>
                 <Text className='aime-review-label'>追问：{item.question}</Text>
-                <Text className='aime-review-text'>{item.answer}</Text>
+                <Text className='aime-review-text'>{item.pending ? '正在继续整理...' : item.answer}</Text>
                 {(item.relatedDialogues || []).map((dialogue, index) => (
                   <Text key={`${dialogue}-${index}`} className='aime-review-quote'>{dialogue}</Text>
                 ))}
               </View>
             ))}
-            {asking && (
-              <View className='aime-review-block'>
-                <Text className='aime-review-note'>正在继续整理...</Text>
-              </View>
-            )}
           </View>
         ) : (
           <View className='aime-review-empty'>
             <Text>选一段时间，回看她和 AI 都聊了什么。</Text>
           </View>
         )}
+        </ScrollView>
       </View>
       <ChatInput onSendMessage={askReview} onInterrupt={stopSpeaking} />
     </View>
