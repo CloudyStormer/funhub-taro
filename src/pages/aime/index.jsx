@@ -268,14 +268,16 @@ export const ChatScreen = ({ mode }) => {
       const list = Array.isArray(data?.messages) ? data.messages.map((item) => normalizeMessage(item, mode)) : []
       setHasMoreHistory(list.length >= HISTORY_PAGE_SIZE)
       setMessages(list.length ? list : fallbackMessages(mode))
+      setTimeout(jumpToLatest, 120)
     } catch (err) {
       console.error('[Aime] history error:', err)
       setMessages(fallbackMessages(mode))
+      setTimeout(jumpToLatest, 120)
     } finally {
       setLoading(false)
       loadingRef.current = false
     }
-  }, [mode])
+  }, [jumpToLatest, mode])
 
   const loadOlderHistory = useCallback(async () => {
     if (loadingOlderRef.current || !hasMoreHistory || !messages.length) return

@@ -34,6 +34,7 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
   const streamingRef   = useRef(null)
   const isLoadingRef   = useRef(false)   // ← 用 ref 供 useCallback 闭包读取，避免陈旧值
   const lastScrollTopRef = useRef(0)
+  const initialReplyRef = useRef(true)
   const wordsStr       = words.map(w => w.word || w).join(',')
 
   const jumpToLatest = useCallback(() => {
@@ -145,12 +146,17 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
 
         const reply = result.data.reply
         const msgId = Date.now().toString()
+        const shouldInitialScroll = !text && initialReplyRef.current
+        initialReplyRef.current = false
 
         // 插入空气泡（显示光标，等待打字机）
-        setShowJumpToLatest(true)
+        setShowJumpToLatest(!shouldInitialScroll)
         setMessages(prev => [...prev, {
           id: msgId, text: '', streaming: true, sender: 'ai', time: makeTime(),
         }])
+        if (shouldInitialScroll) {
+          setTimeout(jumpToLatest, 120)
+        }
 
         // 打字机只在音频真正开始播放时才启动
         let typewriterStarted = false
