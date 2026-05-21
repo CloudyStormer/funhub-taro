@@ -7,6 +7,7 @@
  */
 import Taro from '@tarojs/taro'
 import CryptoJS from 'crypto-js'
+import { isVoiceQuotaError, voiceQuotaMessage } from '../../../utils/voiceError'
 
 const APP_ID     = 'fb74bf2a'
 const API_KEY    = 'a1ddd25040f6bd8a802a593289054510'
@@ -101,7 +102,8 @@ export const transcribeAudio = (filePath) =>
           console.log('[ASR] 收到消息 code:', res.code, 'data.status:', res.data?.status)
 
           if (res.code !== 0) {
-            done(null, new Error(`讯飞错误 ${res.code}: ${res.message}`))
+            const message = `讯飞错误 ${res.code}: ${res.message || ''}`
+            done(null, new Error(isVoiceQuotaError(message) ? voiceQuotaMessage : message))
             return
           }
 

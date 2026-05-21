@@ -1,27 +1,31 @@
 import React, { useState, useRef, useEffect, memo } from 'react'
 import { View, Text, Textarea } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { transcribeAudio } from '../../../utils/asr'
-import { stopSpeaking } from '../../../utils/tts'
+import { transcribeAudio } from '../../pages/english/utils/asr'
+import { isVoiceQuotaError, showVoiceQuotaToast, toVoiceErrorMessage } from '../../utils/voiceError'
 import styles from './index.module.scss'
 
 const CANCEL_THRESHOLD = 80
+const LONG_PRESS_DELAY = 250
 
-const ChatInput = ({ onSendMessage = () => {}, onInterrupt = () => {} }) => {
+const ChatInput = ({ onSendMessage = () => {}, onSendImage = () => {}, onInterrupt = () => {} }) => {
   const [mode, setMode]                     = useState('keyboard')
   const [inputText, setInputText]           = useState('')
   const [isRecording, setIsRecording]       = useState(false)
   const [isCancelling, setIsCancelling]     = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
+  const [isPickingImage, setIsPickingImage] = useState(false)
   const [recordSec, setRecordSec]           = useState(0)
 
   // ref：不受闭包陈旧值影响
-  const hasMicPerm  = useRef(false)
-  const timerRef    = useRef(null)
-  const pressStartY = useRef(0)
-  const isPressed   = useRef(false)
-  const cancelRef   = useRef(false)
-  const rmRef       = useRef(null)   // RecorderManager 懒初始化
+  const hasMicPerm   = useRef(false)
+  const timerRef     = useRef(null)
+  const pressTimerRef = useRef(null)
+  const pressStartY  = useRef(0)
+  const isPressed    = useRef(false)
+  const hasStartedRecording = useRef(false)
+  const cancelRef    = useRef(false)
+  const rmRef        = useRef(null)   // RecorderManager 懒初始化
 
   /* ── 挂载时初始化 RecorderManager 并预检权限 ── */
   useEffect(() => {
@@ -50,8 +54,11 @@ const ChatInput = ({ onSendMessage = () => {}, onInterrupt = () => {} }) => {
         }
       } catch (e) {
         console.error('ASR error', e)
-        const msg = e?.message || e?.errMsg || JSON.stringify(e) || '未知错误'
-        Taro.showToast({ title: msg.slice(0, 30), icon: 'none', duration: 4000 })
+        if (isVoiceQuotaError(e)) {
+          showVoiceQuotaToast(Taro)
+        } else {
+          Taro.showToast({ title: toVoiceErrorMessage(e).slice(0, 30), icon: 'none', duration: 2000 })
+        }
       } finally {
         setIsTranscribing(false)
       }
@@ -59,6 +66,7 @@ const ChatInput = ({ onSendMessage = () => {}, onInterrupt = () => {} }) => {
 
     rm.onError((err) => {
       setIsRecording(false)
+      hasStartedRecording.current = false
       Taro.showToast({ title: err.errMsg || '录音出错', icon: 'none', duration: 2000 })
     })
 
@@ -82,6 +90,8 @@ const ChatInput = ({ onSendMessage = () => {}, onInterrupt = () => {} }) => {
     return () => clearInterval(timerRef.current)
   }, [isRecording])
 
+  useEffect(() => () => clearTimeout(pressTimerRef.current), [])
+
   const fmt = (s) =>
     `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
 
@@ -90,6 +100,53 @@ const ChatInput = ({ onSendMessage = () => {}, onInterrupt = () => {} }) => {
     if (!inputText.trim()) return
     onSendMessage(inputText.trim())
     setInputText('')
+  }
+
+  const compressImage = async (filePath) => {
+    try {
+      const res = await Taro.compressImage({
+        src: filePath,
+        quality: 55,
+      })
+      return res?.tempFilePath || filePath
+    } catch (err) {
+      console.warn('compress image failed, use original:', err)
+      return filePath
+    }
+  }
+
+  const pickImage = async () => {
+    if (isRecording || isTranscribing || isPickingImage) return
+    onInterrupt()
+    setIsPickingImage(true)
+    try {
+      let filePath = ''
+      if (Taro.chooseMedia) {
+        const res = await Taro.chooseMedia({
+          count: 1,
+          mediaType: ['image'],
+          sourceType: ['album', 'camera'],
+          sizeType: ['compressed'],
+        })
+        filePath = res?.tempFiles?.[0]?.tempFilePath || ''
+      } else {
+        const res = await Taro.chooseImage({
+          count: 1,
+          sourceType: ['album', 'camera'],
+          sizeType: ['compressed'],
+        })
+        filePath = res?.tempFilePaths?.[0] || ''
+      }
+      if (!filePath) return
+      const compressedPath = await compressImage(filePath)
+      onSendImage(compressedPath)
+    } catch (err) {
+      if (!String(err?.errMsg || '').includes('cancel')) {
+        Taro.showToast({ title: '图片选择失败，请重试', icon: 'none', duration: 2000 })
+      }
+    } finally {
+      setIsPickingImage(false)
+    }
   }
 
   /* ── 切换模式：切到语音时申请权限 ── */
@@ -114,15 +171,11 @@ const ChatInput = ({ onSendMessage = () => {}, onInterrupt = () => {} }) => {
     }
   }
 
-  /* ── 触摸事件：直接同步启动录音 ── */
-  const onTouchStart = (e) => {
-    if (!hasMicPerm.current || !rmRef.current || isTranscribing) return
-    onInterrupt()            // 中断打字机动画 + 停止TTS播放
-    isPressed.current   = true
-    cancelRef.current   = false
-    pressStartY.current = e.touches[0].clientY
-    setIsCancelling(false)
-    Taro.vibrateShort()   // 振动反馈，确认触摸响应
+  const startRecording = () => {
+    if (!isPressed.current || !rmRef.current || hasStartedRecording.current) return
+    hasStartedRecording.current = true
+    setIsCancelling(cancelRef.current)
+    Taro.vibrateShort()   // 振动反馈，确认长按开始录音
     rmRef.current.start({
       duration:         60000,
       format:           'pcm',
@@ -131,16 +184,42 @@ const ChatInput = ({ onSendMessage = () => {}, onInterrupt = () => {} }) => {
     })
   }
 
-  const onTouchMove = (e) => {
-    if (!isPressed.current) return
-    const cancel = pressStartY.current - e.touches[0].clientY > CANCEL_THRESHOLD
-    setIsCancelling(cancel)
-    cancelRef.current = cancel
+  const blockTouchScroll = (e) => {
+    e?.stopPropagation?.()
+    e?.preventDefault?.()
   }
 
-  const onTouchEnd = () => {
+  /* ── 触摸事件：长按后才启动录音，短按不弹出“松开发送” ── */
+  const onTouchStart = (e) => {
+    if (!hasMicPerm.current || !rmRef.current || isTranscribing) return
+    blockTouchScroll(e)
+    onInterrupt()            // 中断打字机动画 + 停止TTS播放
+    clearTimeout(pressTimerRef.current)
+    isPressed.current          = true
+    hasStartedRecording.current = false
+    cancelRef.current          = false
+    pressStartY.current        = e.touches[0].clientY
+    setIsCancelling(false)
+    pressTimerRef.current = setTimeout(startRecording, LONG_PRESS_DELAY)
+  }
+
+  const onTouchMove = (e) => {
     if (!isPressed.current) return
+    blockTouchScroll(e)
+    const cancel = pressStartY.current - e.touches[0].clientY > CANCEL_THRESHOLD
+    cancelRef.current = cancel
+    if (hasStartedRecording.current) {
+      setIsCancelling(cancel)
+    }
+  }
+
+  const onTouchEnd = (e) => {
+    if (!isPressed.current) return
+    blockTouchScroll(e)
+    clearTimeout(pressTimerRef.current)
     isPressed.current = false
+    if (!hasStartedRecording.current) return
+    hasStartedRecording.current = false
     setIsCancelling(false)
     rmRef.current?.stop()
   }
@@ -151,7 +230,11 @@ const ChatInput = ({ onSendMessage = () => {}, onInterrupt = () => {} }) => {
   const vColor  = isCancelling ? 'rgba(248,71,33,1)'    : isRecording ? 'rgba(115,44,255,1)'    : 'rgba(10,17,32,1)'
 
   return (
-    <View className={styles.wrap}>
+    <View
+      className={styles.wrap}
+      catchMove={isPressed.current || isRecording}
+      onTouchMove={isPressed.current || isRecording ? blockTouchScroll : undefined}
+    >
       {/* 录音悬浮提示 */}
       {isRecording && (
         <View className={styles.recOverlay}>
@@ -201,9 +284,11 @@ const ChatInput = ({ onSendMessage = () => {}, onInterrupt = () => {} }) => {
             <View
               className={styles.voiceBtn}
               style={{ background: vBg, borderColor: vBorder }}
+              catchMove
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
+              onTouchCancel={onTouchEnd}
             >
               <Text style={{ fontSize: '14px' }}>🎤</Text>
               <Text style={{ color: vColor, fontSize: '14px', fontWeight: '600' }}>
@@ -220,8 +305,8 @@ const ChatInput = ({ onSendMessage = () => {}, onInterrupt = () => {} }) => {
             <Text style={{ color: 'rgb(255,255,255)', fontSize: '16px' }}>▶</Text>
           </View>
         ) : (
-          <View className={styles.iconBtn}>
-            <Text style={{ fontSize: '20px', color: 'rgb(148,163,184)', letterSpacing: '-2px' }}>···</Text>
+          <View className={`${styles.iconBtn} ${styles.imageBtn}`} onClick={pickImage}>
+            <Text style={{ fontSize: '20px', color: 'rgb(148,163,184)' }}>{isPickingImage ? '…' : '+'}</Text>
           </View>
         )}
       </View>

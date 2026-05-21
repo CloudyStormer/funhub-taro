@@ -1,4 +1,5 @@
 import Taro from '@tarojs/taro'
+import { isVoiceQuotaError, showVoiceQuotaToast } from '../../../utils/voiceError'
 
 const TTS_URL = 'https://www.hgshouse.com/aimebridge/tts'
 
@@ -65,6 +66,34 @@ const playBuffer = (arrayBuffer, opts = {}) => {
   })
 }
 
+const decodeArrayBuffer = (arrayBuffer) => {
+  if (!arrayBuffer) return ''
+  const bytes = new Uint8Array(arrayBuffer)
+  let binary = ''
+  for (let i = 0; i < bytes.length; i += 8192) {
+    binary += String.fromCharCode.apply(null, bytes.slice(i, i + 8192))
+  }
+  try {
+    return decodeURIComponent(escape(binary))
+  } catch (_) {
+    return binary
+  }
+}
+
+const isProbablyTextError = (arrayBuffer) => {
+  const text = decodeArrayBuffer(arrayBuffer).trim()
+  if (!text) return false
+  return text.startsWith('{') || text.startsWith('<') || /error|quota|额度|余额|不足|欠费/i.test(text)
+}
+
+const handleTtsUnavailable = (error, opts = {}) => {
+  if (isVoiceQuotaError(error)) {
+    showVoiceQuotaToast(Taro)
+    opts.onUnavailable?.(error)
+  }
+  opts.onPlay?.()
+}
+
 export const speakText = (text, opts = {}) => {
   const finalText = cleanText(text)
   if (!finalText) {
@@ -82,16 +111,18 @@ export const speakText = (text, opts = {}) => {
     timeout: 25000,
     data: { text: finalText },
     success: (res) => {
-      if (res.statusCode === 200 && res.data) {
+      if (res.statusCode === 200 && res.data && !isProbablyTextError(res.data)) {
         playBuffer(res.data, opts)
       } else {
-        console.error('[Aime TTS] api status:', res.statusCode)
-        opts.onPlay?.()
+        const bodyText = decodeArrayBuffer(res.data)
+        const error = new Error(bodyText || `TTS HTTP ${res.statusCode}`)
+        console.error('[Aime TTS] api status:', res.statusCode, bodyText)
+        handleTtsUnavailable(error, opts)
       }
     },
     fail: (err) => {
       console.error('[Aime TTS] request failed:', err.errMsg)
-      opts.onPlay?.()
+      handleTtsUnavailable(err, opts)
     },
   })
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { View, Text, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import ChatMessage from './ChatMessage'
-import ChatInput from './ChatInput'
+import ChatInput from '../../../../components/ChatInput'
 import { speakText, stopSpeaking } from '../../utils/tts'
 import styles from './index.module.scss'
 

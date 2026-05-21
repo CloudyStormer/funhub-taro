@@ -3,6 +3,7 @@
  * 小程序只需发 HTTP 请求，无需 socket 白名单
  */
 import Taro from '@tarojs/taro'
+import { isVoiceQuotaError, showVoiceQuotaToast } from '../../../utils/voiceError'
 
 const TTS_URL = 'https://www.hgshouse.com/api/tts'
 
@@ -58,6 +59,34 @@ const playBuffer = (arrayBuffer, opts = {}) => {
   })
 }
 
+const decodeArrayBuffer = (arrayBuffer) => {
+  if (!arrayBuffer) return ''
+  const bytes = new Uint8Array(arrayBuffer)
+  let binary = ''
+  for (let i = 0; i < bytes.length; i += 8192) {
+    binary += String.fromCharCode.apply(null, bytes.slice(i, i + 8192))
+  }
+  try {
+    return decodeURIComponent(escape(binary))
+  } catch (_) {
+    return binary
+  }
+}
+
+const isProbablyTextError = (arrayBuffer) => {
+  const text = decodeArrayBuffer(arrayBuffer).trim()
+  if (!text) return false
+  return text.startsWith('{') || text.startsWith('<') || /error|quota|额度|余额|不足|欠费/i.test(text)
+}
+
+const handleTtsUnavailable = (error, opts = {}) => {
+  if (isVoiceQuotaError(error)) {
+    showVoiceQuotaToast(Taro)
+    opts.onUnavailable?.(error)
+  }
+  opts.onPlay?.()
+}
+
 /**
  * 合成并播放文字（fire-and-forget）
  * @param {string} text     要朗读的文字
@@ -80,17 +109,19 @@ export const speakText = (text, opts = {}) => {
     responseType: 'arraybuffer',
     data: { text: finalText },
     success: (res) => {
-      if (res.statusCode === 200 && res.data) {
+      if (res.statusCode === 200 && res.data && !isProbablyTextError(res.data)) {
         console.log('[TTS] 收到音频，大小:', res.data.byteLength, 'bytes')
         playBuffer(res.data, opts)    // 把 opts（含 onPlay）透传给 playBuffer
       } else {
-        console.error('[TTS] 接口返回异常:', res.statusCode)
-        opts.onPlay?.()              // 异常时也触发 fallback
+        const bodyText = decodeArrayBuffer(res.data)
+        const error = new Error(bodyText || `TTS HTTP ${res.statusCode}`)
+        console.error('[TTS] 接口返回异常:', res.statusCode, bodyText)
+        handleTtsUnavailable(error, opts)
       }
     },
     fail: (e) => {
       console.error('[TTS] 请求失败:', e.errMsg)
-      opts.onPlay?.()               // 失败时也触发 fallback
+      handleTtsUnavailable(e, opts)
     },
   })
 }

@@ -4,6 +4,8 @@
   border-top: 1px solid rgba(233, 233, 240, 1);
   padding: 10px 12px 20px;
   position: relative;
+  overscroll-behavior: contain;
+  touch-action: none;
 }
 
 /* ── 转写中 Toast ── */
@@ -111,6 +113,10 @@
   &:active { background: rgb(95, 30, 220); }
 }
 
+.imageBtn {
+  font-weight: 700;
+}
+
 /* ── 输入主体 ── */
 .inputMain {
   flex: 1;
@@ -147,4 +153,8 @@
   justify-content: center;
   gap: 6px;
   transition: background 0.12s, border-color 0.12s;
+  overscroll-behavior: contain;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }

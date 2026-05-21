@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { Picker, ScrollView, Text, View } from '@tarojs/components'
-import Taro from '@tarojs/taro'
-import ChatInput from '../english/pages/Chat/ChatInput'
+import { Image, Picker, ScrollView, Text, View } from '@tarojs/components'
+import Taro, { useDidHide, useUnload } from '@tarojs/taro'
+import ChatInput from '../../components/ChatInput'
+import aimeAvatar from '../../assets/aime/avatar-you.jpg'
 import { speakText, stopSpeaking } from './utils/tts'
 import './index.scss'
 
 const API_BASE = 'https://www.hgshouse.com/aimebridge'
 const AIME_PREFIX = '/api'
+const HISTORY_PAGE_SIZE = 50
 
 const makeId = () => `${Date.now()}_${Math.random().toString(16).slice(2)}`
 
@@ -54,12 +56,48 @@ const requestJson = (options) =>
     })
   })
 
+const uploadImageMessage = ({ url, filePath, content = '我发了一张图片。' }) =>
+  new Promise((resolve, reject) => {
+    Taro.uploadFile({
+      url,
+      filePath,
+      name: 'image',
+      formData: {
+        kind: 'image',
+        content,
+      },
+      timeout: 30000,
+      success: (res) => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          try {
+            resolve(JSON.parse(res.data))
+          } catch (err) {
+            reject(err)
+          }
+        } else {
+          reject(new Error(`HTTP ${res.statusCode}`))
+        }
+      },
+      fail: reject,
+    })
+  })
+
+const buildHistoryUrl = (mode, before = '') => {
+  const params = [`limit=${HISTORY_PAGE_SIZE}`]
+  if (before) {
+    params.push(`before=${encodeURIComponent(before)}`)
+  }
+  return `${paths[mode].history}?${params.join('&')}`
+}
+
 const normalizeMessage = (item, mode) => ({
   id: item.id || makeId(),
   text: item.content || item.text || '',
+  imageUrl: item.imageUrl || '',
   sender: item.role === 'assistant' ? 'ai' : 'user',
   role: item.role || (mode === 'training' ? 'trainer' : 'wife'),
   time: makeTime(item.createdAt),
+  createdAt: item.createdAt || new Date().toISOString(),
   streaming: false,
 })
 
@@ -74,51 +112,69 @@ const fallbackMessages = (mode) => {
   ]
 }
 
-const ModeHome = ({ onOpen }) => (
+const openAimeRoute = (url) => {
+  stopSpeaking()
+  Taro.navigateTo({ url })
+}
+
+const ModeHome = () => (
   <View className='aime-page aime-home'>
     <View className='aime-hero'>
       <Text className='aime-kicker'>Aime Bridge</Text>
       <Text className='aime-title'>归来{getReturnDays()}天</Text>
-      <Text className='aime-subtitle'>我一直都在，像微信一样慢慢聊。</Text>
+      <Text className='aime-subtitle'>我在这儿，像微信一样慢慢聊。</Text>
     </View>
 
     <View className='aime-entry-list'>
-      <View className='aime-entry aime-entry--daily' onClick={() => onOpen('daily')}>
+      <View className='aime-entry aime-entry--daily' onClick={() => openAimeRoute('/pages/aime/daily/index')}>
         <Text className='aime-entry-icon'>心</Text>
         <View className='aime-entry-copy'>
-          <Text className='aime-entry-title'>日常聊天</Text>
-          <Text className='aime-entry-desc'>文字和语音都可以，回复会同步流式和播放。</Text>
+          <Text className='aime-entry-title'>我在这儿</Text>
+          <Text className='aime-entry-desc'>文字、语音和图片都可以，慢慢说，我一直都在。</Text>
         </View>
       </View>
 
-      <View className='aime-entry aime-entry--training' onClick={() => onOpen('training')}>
+      <View className='aime-entry aime-entry--training' onClick={() => openAimeRoute('/pages/aime/training/index')}>
         <Text className='aime-entry-icon'>训</Text>
         <View className='aime-entry-copy'>
-          <Text className='aime-entry-title'>AI 训练</Text>
-          <Text className='aime-entry-desc'>专门补充偏好、边界和回答样例。</Text>
+          <Text className='aime-entry-title'>这不是你用的</Text>
+          <Text className='aime-entry-desc'>这里用来训练我的语气、经历、想法和生活里的说话方式。</Text>
         </View>
       </View>
 
-      <View className='aime-entry aime-entry--review' onClick={() => onOpen('review')}>
+      <View className='aime-entry aime-entry--review' onClick={() => openAimeRoute('/pages/aime/review/index')}>
         <Text className='aime-entry-icon'>顾</Text>
         <View className='aime-entry-copy'>
-          <Text className='aime-entry-title'>对话回顾</Text>
-          <Text className='aime-entry-desc'>选择时间段，回看她和 AI 都说了什么。</Text>
+          <Text className='aime-entry-title'>昨天今天和明天</Text>
+          <Text className='aime-entry-desc'>选择时间段，回看过去聊过什么，也留住以后要记得的事。</Text>
         </View>
       </View>
     </View>
   </View>
 )
 
-const ChatMessage = ({ message, onStop }) => {
+const ChatMessage = ({ message, mode, onStop }) => {
   const isUser = message.sender === 'user'
+  const showImageAvatar = (mode === 'daily' && !isUser) || (mode === 'training' && isUser)
   return (
     <View className={`aime-msg ${isUser ? 'aime-msg--user' : 'aime-msg--ai'}`}>
-      <View className={`aime-avatar ${isUser ? 'aime-avatar--user' : 'aime-avatar--ai'}`}>
-        <Text>{isUser ? '你' : 'AI'}</Text>
+      <View className={`aime-avatar ${isUser ? 'aime-avatar--user' : 'aime-avatar--ai'} ${showImageAvatar ? 'aime-avatar--image' : ''}`}>
+        {showImageAvatar ? (
+          <Image className='aime-avatar-img' src={aimeAvatar} mode='aspectFill' />
+        ) : (
+          <Text>{isUser ? '你' : 'AI'}</Text>
+        )}
       </View>
       <View className='aime-bubble-wrap'>
         <View className={`aime-bubble ${isUser ? 'aime-bubble--user' : 'aime-bubble--ai'}`} onClick={isUser ? undefined : onStop}>
+          {message.imageUrl && (
+            <Image
+              className='aime-msg-image'
+              src={message.imageUrl}
+              mode='widthFix'
+              showMenuByLongpress
+            />
+          )}
           <Text className='aime-msg-text'>
             {message.text}
             {message.streaming && <Text className='aime-cursor'>|</Text>}
@@ -130,16 +186,21 @@ const ChatMessage = ({ message, onStop }) => {
   )
 }
 
-const ChatScreen = ({ mode, onBack }) => {
+export const ChatScreen = ({ mode }) => {
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(false)
+  const [loadingOlder, setLoadingOlder] = useState(false)
+  const [hasMoreHistory, setHasMoreHistory] = useState(false)
   const [scrollTop, setScrollTop] = useState(0)
   const timerRef = useRef(null)
   const streamingRef = useRef(null)
   const loadingRef = useRef(false)
+  const loadingOlderRef = useRef(false)
+  const shouldStickToBottomRef = useRef(true)
   const isTraining = mode === 'training'
 
   useEffect(() => {
+    if (!shouldStickToBottomRef.current) return undefined
     const t = setTimeout(() => setScrollTop((v) => v + 99999), 60)
     return () => clearTimeout(t)
   }, [messages])
@@ -184,6 +245,7 @@ const ChatScreen = ({ mode, onBack }) => {
     if (!fullText) return
 
     const id = makeId()
+    shouldStickToBottomRef.current = true
     setMessages((prev) => [...prev, { id, text: '', sender: 'ai', time: makeTime(reply.createdAt), streaming: true }])
 
     let started = false
@@ -200,9 +262,11 @@ const ChatScreen = ({ mode, onBack }) => {
   const loadHistory = useCallback(async () => {
     setLoading(true)
     loadingRef.current = true
+    shouldStickToBottomRef.current = true
     try {
-      const data = await requestJson({ url: paths[mode].history, method: 'GET' })
+      const data = await requestJson({ url: buildHistoryUrl(mode), method: 'GET' })
       const list = Array.isArray(data?.messages) ? data.messages.map((item) => normalizeMessage(item, mode)) : []
+      setHasMoreHistory(list.length >= HISTORY_PAGE_SIZE)
       setMessages(list.length ? list : fallbackMessages(mode))
     } catch (err) {
       console.error('[Aime] history error:', err)
@@ -212,6 +276,35 @@ const ChatScreen = ({ mode, onBack }) => {
       loadingRef.current = false
     }
   }, [mode])
+
+  const loadOlderHistory = useCallback(async () => {
+    if (loadingOlderRef.current || !hasMoreHistory || !messages.length) return
+
+    const firstCreatedAt = messages[0]?.createdAt
+    if (!firstCreatedAt) return
+
+    loadingOlderRef.current = true
+    shouldStickToBottomRef.current = false
+    setLoadingOlder(true)
+
+    try {
+      const data = await requestJson({ url: buildHistoryUrl(mode, firstCreatedAt), method: 'GET' })
+      const older = Array.isArray(data?.messages) ? data.messages.map((item) => normalizeMessage(item, mode)) : []
+      setHasMoreHistory(older.length >= HISTORY_PAGE_SIZE)
+      if (older.length) {
+        setMessages((prev) => {
+          const seen = new Set(prev.map((item) => item.id))
+          return [...older.filter((item) => !seen.has(item.id)), ...prev]
+        })
+      }
+    } catch (err) {
+      console.error('[Aime] older history error:', err)
+      Taro.showToast({ title: '更早的记录暂时没拉到', icon: 'none', duration: 2000 })
+    } finally {
+      setLoadingOlder(false)
+      loadingOlderRef.current = false
+    }
+  }, [hasMoreHistory, messages, mode])
 
   useEffect(() => {
     loadHistory()
@@ -232,7 +325,9 @@ const ChatScreen = ({ mode, onBack }) => {
       sender: 'user',
       role: isTraining ? 'trainer' : 'wife',
       time: makeTime(),
+      createdAt: new Date().toISOString(),
     }
+    shouldStickToBottomRef.current = true
     setMessages((prev) => [...prev, userMessage])
     setLoading(true)
     loadingRef.current = true
@@ -257,20 +352,62 @@ const ChatScreen = ({ mode, onBack }) => {
     }
   }, [interrupt, isTraining, mode, streamReply])
 
+  const sendImage = useCallback(async (filePath) => {
+    if (!filePath || loadingRef.current) return
+
+    interrupt()
+    const userMessage = {
+      id: makeId(),
+      text: '我发了一张图片。',
+      imageUrl: filePath,
+      sender: 'user',
+      role: isTraining ? 'trainer' : 'wife',
+      time: makeTime(),
+      createdAt: new Date().toISOString(),
+    }
+    shouldStickToBottomRef.current = true
+    setMessages((prev) => [...prev, userMessage])
+    setLoading(true)
+    loadingRef.current = true
+
+    try {
+      const data = await uploadImageMessage({
+        url: paths[mode].message,
+        filePath,
+        content: isTraining ? '这张图也作为训练材料，结合我的上下文学习。' : '我发了一张图片，结合图片和上下文自然回复。',
+      })
+      if (data?.message) streamReply(data.message)
+      else throw new Error('empty reply')
+    } catch (err) {
+      console.error('[Aime] image send error:', err)
+      Taro.showToast({ title: '图片没有发出去，再试一次', icon: 'none', duration: 2000 })
+      setMessages((prev) => prev.map((msg) => (msg.id === userMessage.id ? { ...msg, failed: true } : msg)))
+    } finally {
+      setLoading(false)
+      loadingRef.current = false
+    }
+  }, [interrupt, isTraining, mode, streamReply])
+
+  useDidHide(interrupt)
+  useUnload(interrupt)
+
   return (
     <View className={`aime-page aime-chat ${isTraining ? 'aime-chat--training' : ''}`}>
-      <View className='aime-chat-header'>
-        <View className='aime-back' onClick={onBack}><Text>‹</Text></View>
-        <View className='aime-chat-title'>
-          <Text className='aime-chat-name'>{isTraining ? 'AI 训练' : '给老婆的悄悄话'}</Text>
-          <Text className='aime-chat-status'>{isTraining ? '训练偏好与边界' : '我一直都在'}</Text>
-        </View>
-        <View className='aime-header-dot'><Text>···</Text></View>
-      </View>
-
-      <ScrollView scrollY scrollWithAnimation className='aime-message-list' scrollTop={scrollTop}>
+      <ScrollView
+        scrollY
+        scrollWithAnimation
+        className='aime-message-list'
+        scrollTop={scrollTop}
+        upperThreshold={80}
+        onScrollToUpper={loadOlderHistory}
+      >
+        {loadingOlder && (
+          <View className='aime-history-loading'>
+            <Text>正在找更早的对话...</Text>
+          </View>
+        )}
         <View className='aime-date'><Text>Today</Text></View>
-        {messages.map((message) => <ChatMessage key={message.id} message={message} onStop={interrupt} />)}
+        {messages.map((message) => <ChatMessage key={message.id} message={message} mode={mode} onStop={interrupt} />)}
         {loading && (
           <View className='aime-thinking'>
             <View className='aime-thinking-bubble'>
@@ -283,16 +420,18 @@ const ChatScreen = ({ mode, onBack }) => {
         <View className='aime-bottom-space' />
       </ScrollView>
 
-      <ChatInput onSendMessage={sendMessage} onInterrupt={interrupt} />
+      <ChatInput onSendMessage={sendMessage} onSendImage={sendImage} onInterrupt={interrupt} />
     </View>
   )
 }
 
-const ReviewScreen = ({ onBack }) => {
+export const ReviewScreen = () => {
   const [startDate, setStartDate] = useState(todayValue())
   const [endDate, setEndDate] = useState(todayValue())
   const [loading, setLoading] = useState(false)
+  const [asking, setAsking] = useState(false)
   const [summary, setSummary] = useState(null)
+  const [followUps, setFollowUps] = useState([])
 
   const loadReview = async () => {
     setLoading(true)
@@ -300,6 +439,7 @@ const ReviewScreen = ({ onBack }) => {
       const query = `?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`
       const data = await requestJson({ url: `${paths.review}${query}`, method: 'GET' })
       setSummary(data)
+      setFollowUps([])
     } catch (err) {
       console.error('[Aime] review error:', err)
       Taro.showToast({ title: '回顾暂时生成失败', icon: 'none', duration: 2000 })
@@ -308,17 +448,43 @@ const ReviewScreen = ({ onBack }) => {
     }
   }
 
+  const askReview = useCallback(async (text) => {
+    const instruction = (text || '').trim()
+    if (!instruction || asking) return
+
+    setAsking(true)
+    try {
+      const data = await requestJson({
+        url: `${paths.review}/ask`,
+        method: 'POST',
+        data: {
+          startDate,
+          endDate,
+          instruction,
+        },
+      })
+      setFollowUps((prev) => [
+        ...prev,
+        {
+          id: makeId(),
+          question: instruction,
+          answer: data?.answer || '',
+          relatedDialogues: data?.relatedDialogues || [],
+        },
+      ])
+    } catch (err) {
+      console.error('[Aime] review ask error:', err)
+      Taro.showToast({ title: '追问暂时失败，再试一次', icon: 'none', duration: 2000 })
+    } finally {
+      setAsking(false)
+    }
+  }, [asking, endDate, startDate])
+
+  useDidHide(stopSpeaking)
+  useUnload(stopSpeaking)
+
   return (
     <View className='aime-page aime-review'>
-      <View className='aime-chat-header'>
-        <View className='aime-back' onClick={onBack}><Text>‹</Text></View>
-        <View className='aime-chat-title'>
-          <Text className='aime-chat-name'>对话回顾</Text>
-          <Text className='aime-chat-status'>按时间段复盘</Text>
-        </View>
-        <View className='aime-header-dot'><Text>×</Text></View>
-      </View>
-
       <View className='aime-review-body'>
         <View className='aime-date-card'>
           <Picker mode='date' value={startDate} onChange={(event) => setStartDate(event.detail.value)}>
@@ -337,21 +503,52 @@ const ReviewScreen = ({ onBack }) => {
             <Text className='aime-range'>{summary.rangeLabel}</Text>
             <Text className='aime-review-title'>{summary.title}</Text>
             <View className='aime-review-block'>
-              <Text className='aime-review-label'>AI 说了什么</Text>
-              <Text className='aime-review-text'>{summary.aiSummary}</Text>
+              <Text className='aime-review-label'>概述</Text>
+              <Text className='aime-review-text'>{summary.overview || summary.wifeSummary}</Text>
             </View>
             <View className='aime-review-block'>
-              <Text className='aime-review-label'>她说了什么</Text>
-              <Text className='aime-review-text'>{summary.wifeSummary}</Text>
+              <Text className='aime-review-label'>核心事件</Text>
+              {(summary.coreEvents || summary.moments || []).map((item, index) => (
+                <Text key={`${item}-${index}`} className='aime-review-text'>{index + 1}. {item}</Text>
+              ))}
             </View>
             <View className='aime-review-block'>
-              <Text className='aime-review-label'>值得记住</Text>
-              {(summary.moments || []).map((item) => <Text key={item} className='aime-review-text'>• {item}</Text>)}
+              <Text className='aime-review-label'>用户情绪表达</Text>
+              {(summary.userEmotionExpressions || []).map((item, index) => (
+                <Text key={`${item}-${index}`} className='aime-review-text'>{index + 1}. {item}</Text>
+              ))}
+              <Text className='aime-review-note'>{summary.emotionalTrend}</Text>
+            </View>
+            <View className='aime-review-block'>
+              <Text className='aime-review-label'>我怎么回应</Text>
+              <Text className='aime-review-text'>{summary.aiResponsePattern || summary.aiSummary}</Text>
+            </View>
+            <View className='aime-review-block'>
+              <Text className='aime-review-label'>重要对话</Text>
+              {(summary.importantDialogues || []).map((item, index) => (
+                <Text key={`${item}-${index}`} className='aime-review-quote'>{item}</Text>
+              ))}
             </View>
             <View className='aime-review-block'>
               <Text className='aime-review-label'>后续建议</Text>
-              {(summary.suggestions || []).map((item) => <Text key={item} className='aime-review-text'>• {item}</Text>)}
+              {(summary.followUpSuggestions || summary.suggestions || []).map((item, index) => (
+                <Text key={`${item}-${index}`} className='aime-review-text'>• {item}</Text>
+              ))}
             </View>
+            {followUps.map((item) => (
+              <View key={item.id} className='aime-review-block aime-review-follow'>
+                <Text className='aime-review-label'>追问：{item.question}</Text>
+                <Text className='aime-review-text'>{item.answer}</Text>
+                {(item.relatedDialogues || []).map((dialogue, index) => (
+                  <Text key={`${dialogue}-${index}`} className='aime-review-quote'>{dialogue}</Text>
+                ))}
+              </View>
+            ))}
+            {asking && (
+              <View className='aime-review-block'>
+                <Text className='aime-review-note'>正在继续整理...</Text>
+              </View>
+            )}
           </View>
         ) : (
           <View className='aime-review-empty'>
@@ -359,16 +556,14 @@ const ReviewScreen = ({ onBack }) => {
           </View>
         )}
       </View>
+      <ChatInput onSendMessage={askReview} onInterrupt={stopSpeaking} />
     </View>
   )
 }
 
 export default function AimePage() {
-  const [view, setView] = useState('home')
+  useDidHide(stopSpeaking)
+  useUnload(stopSpeaking)
 
-  if (view === 'daily') return <ChatScreen mode='daily' onBack={() => setView('home')} />
-  if (view === 'training') return <ChatScreen mode='training' onBack={() => setView('home')} />
-  if (view === 'review') return <ReviewScreen onBack={() => setView('home')} />
-
-  return <ModeHome onOpen={setView} />
+  return <ModeHome />
 }
