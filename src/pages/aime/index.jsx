@@ -592,8 +592,9 @@ export const ChatScreen = ({ mode }) => {
     } finally {
       setLoading(false)
       loadingRef.current = false
+      setTimeout(scrollToBottom, 80)
     }
-  }, [mode])
+  }, [mode, scrollToBottom])
 
   const loadOlderHistory = useCallback(async () => {
     if (loadingOlderRef.current || !hasMoreHistory || !messages.length) return
