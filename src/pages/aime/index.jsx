@@ -138,7 +138,9 @@ const uploadVoiceCloneAudio = ({ filePath, textId, textSegId }) =>
           reject(new Error(detail || `HTTP ${res.statusCode}`))
         }
       },
-      fail: reject,
+      fail: (err) => {
+        reject(new Error(err?.errMsg || 'uploadFile failed'))
+      },
     })
   })
 
@@ -367,7 +369,7 @@ export const VoiceCloneScreen = () => {
       Taro.showToast({ title: '已提交训练', icon: 'none', duration: 2000 })
     } catch (err) {
       console.error('[AimeVoice] submit error:', err)
-      Taro.showToast({ title: (err?.message || '提交失败，稍后再试').slice(0, 30), icon: 'none', duration: 3000 })
+      Taro.showToast({ title: (err?.message || err?.errMsg || '提交失败，稍后再试').slice(0, 30), icon: 'none', duration: 3000 })
     } finally {
       setSubmitting(false)
     }
