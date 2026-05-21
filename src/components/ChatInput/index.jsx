@@ -8,7 +8,13 @@ import styles from './index.module.scss'
 const CANCEL_THRESHOLD = 80
 const LONG_PRESS_DELAY = 250
 
-const ChatInput = ({ onSendMessage = () => {}, onSendImage = () => {}, onInterrupt = () => {} }) => {
+const ChatInput = ({
+  onSendMessage = () => {},
+  onSendImage = () => {},
+  onInterrupt = () => {},
+  onInputFocus = () => {},
+  onVoicePressStart = () => {},
+}) => {
   const [mode, setMode]                     = useState('keyboard')
   const [inputText, setInputText]           = useState('')
   const [isRecording, setIsRecording]       = useState(false)
@@ -190,6 +196,7 @@ const ChatInput = ({ onSendMessage = () => {}, onSendImage = () => {}, onInterru
 
   /* ── 触摸事件：长按后才启动录音，短按不弹出“松开发送” ── */
   const onTouchStart = (e) => {
+    onVoicePressStart()
     if (!hasMicPerm.current || !rmRef.current || isTranscribing) return
     stopTouchBubble(e)
     onInterrupt()            // 中断打字机动画 + 停止TTS播放
@@ -280,6 +287,7 @@ const ChatInput = ({ onSendMessage = () => {}, onSendImage = () => {}, onInterru
                 className={styles.textarea}
                 value={inputText}
                 onInput={(e) => setInputText(e.detail.value)}
+                onFocus={onInputFocus}
                 placeholder="输入消息..."
                 autoHeight
                 maxlength={500}

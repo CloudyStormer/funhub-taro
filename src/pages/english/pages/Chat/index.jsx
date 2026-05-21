@@ -26,29 +26,19 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
   const [messages, setMessages]   = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [scrollIntoView, setScrollIntoView] = useState('')
-  const [showJumpToLatest, setShowJumpToLatest] = useState(false)
 
   const sessionIdRef   = useRef('')
   const userIdRef      = useRef(getUserId())
   const typeTimerRef   = useRef(null)
   const streamingRef   = useRef(null)
   const isLoadingRef   = useRef(false)   // ← 用 ref 供 useCallback 闭包读取，避免陈旧值
-  const lastScrollTopRef = useRef(0)
-  const initialReplyRef = useRef(true)
   const wordsStr       = words.map(w => w.word || w).join(',')
 
-  const jumpToLatest = useCallback(() => {
-    setShowJumpToLatest(false)
+  const scrollToBottom = useCallback(() => {
     setScrollIntoView('english-chat-bottom')
-    setTimeout(() => setScrollIntoView(''), 200)
-  }, [])
-
-  const handleScroll = useCallback((event) => {
-    const nextTop = event?.detail?.scrollTop || 0
-    if (nextTop < lastScrollTopRef.current - 120) {
-      setShowJumpToLatest(true)
-    }
-    lastScrollTopRef.current = nextTop
+    setTimeout(() => setScrollIntoView(''), 260)
+    setTimeout(() => setScrollIntoView('english-chat-bottom'), 320)
+    setTimeout(() => setScrollIntoView(''), 560)
   }, [])
 
   useEffect(() => {
@@ -146,17 +136,11 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
 
         const reply = result.data.reply
         const msgId = Date.now().toString()
-        const shouldInitialScroll = !text && initialReplyRef.current
-        initialReplyRef.current = false
 
         // 插入空气泡（显示光标，等待打字机）
-        setShowJumpToLatest(!shouldInitialScroll)
         setMessages(prev => [...prev, {
           id: msgId, text: '', streaming: true, sender: 'ai', time: makeTime(),
         }])
-        if (shouldInitialScroll) {
-          setTimeout(jumpToLatest, 120)
-        }
 
         // 打字机只在音频真正开始播放时才启动
         let typewriterStarted = false
@@ -191,7 +175,6 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
     flushTypewriter()
     stopSpeaking()
 
-    setShowJumpToLatest(true)
     setMessages(prev => [...prev, {
       id: Date.now().toString(), text: text.trim(), sender: 'user', time: makeTime(),
     }])
@@ -223,8 +206,6 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
         scrollWithAnimation
         className={styles.msgArea}
         scrollIntoView={scrollIntoView}
-        onScroll={handleScroll}
-        onScrollToLower={() => setShowJumpToLatest(false)}
       >
         <View className={styles.dateSep}>
           <Text className={styles.dateText}>Today</Text>
@@ -250,13 +231,12 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
         <View id='english-chat-bottom' style={{ height: '24px' }} />
       </ScrollView>
 
-      {showJumpToLatest && (
-        <View className={styles.jumpLatest} onClick={jumpToLatest}>
-          <Text>↓</Text>
-        </View>
-      )}
-
-      <ChatInput onSendMessage={handleSend} onInterrupt={handleInterrupt} />
+      <ChatInput
+        onSendMessage={handleSend}
+        onInterrupt={handleInterrupt}
+        onInputFocus={scrollToBottom}
+        onVoicePressStart={scrollToBottom}
+      />
     </View>
   )
 }

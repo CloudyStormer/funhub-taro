@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import { Image, Picker, ScrollView, Text, View } from '@tarojs/components'
 import Taro, { useDidHide, useUnload } from '@tarojs/taro'
 import ChatInput from '../../components/ChatInput'
@@ -15,6 +15,26 @@ const makeId = () => `${Date.now()}_${Math.random().toString(16).slice(2)}`
 const makeTime = (iso) => {
   const date = iso ? new Date(iso) : new Date()
   return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+}
+
+const makeWechatTime = (iso) => {
+  const date = iso ? new Date(iso) : new Date()
+  if (Number.isNaN(date.getTime())) return makeTime()
+  const now = new Date()
+  const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+  const nowStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const clock = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+  if (dateStart === nowStart) return clock
+  if (dateStart === nowStart - 86400000) return `昨天 ${clock}`
+  return `${date.getMonth() + 1}月${date.getDate()}日 ${clock}`
+}
+
+const shouldShowMessageTime = (messages, index) => {
+  if (index === 0) return true
+  const current = new Date(messages[index]?.createdAt || 0).getTime()
+  const previous = new Date(messages[index - 1]?.createdAt || 0).getTime()
+  if (!current || !previous) return false
+  return current - previous >= 5 * 60 * 1000
 }
 
 const todayValue = () => {
@@ -136,11 +156,11 @@ const normalizeMessage = (item, mode) => ({
 const fallbackMessages = (mode) => {
   if (mode === 'training') {
     return [
-      { id: 'training-hello', text: '训练模式已打开。你可以告诉我哪些话要保留，哪些回答要避开。', sender: 'ai', time: makeTime() },
+      { id: 'training-hello', text: '训练模式已打开。你可以告诉我哪些话要保留，哪些回答要避开。', sender: 'ai', time: makeTime(), createdAt: new Date().toISOString() },
     ]
   }
   return [
-    { id: 'daily-hello', text: '我一直都在。你慢慢说，我认真听。', sender: 'ai', time: makeTime() },
+    { id: 'daily-hello', text: '我一直都在。你慢慢说，我认真听。', sender: 'ai', time: makeTime(), createdAt: new Date().toISOString() },
   ]
 }
 
@@ -464,11 +484,16 @@ const ChatMessage = ({ message, mode, onStop }) => {
             {message.streaming && <Text className='aime-cursor'>|</Text>}
           </Text>
         </View>
-        <Text className='aime-time'>{message.time}</Text>
       </View>
     </View>
   )
 }
+
+const AimeTimeDivider = ({ value }) => (
+  <View className='aime-time-divider'>
+    <Text>{value}</Text>
+  </View>
+)
 
 export const ChatScreen = ({ mode }) => {
   const [messages, setMessages] = useState([])
@@ -476,12 +501,10 @@ export const ChatScreen = ({ mode }) => {
   const [loadingOlder, setLoadingOlder] = useState(false)
   const [hasMoreHistory, setHasMoreHistory] = useState(false)
   const [scrollIntoView, setScrollIntoView] = useState('')
-  const [showJumpToLatest, setShowJumpToLatest] = useState(false)
   const timerRef = useRef(null)
   const streamingRef = useRef(null)
   const loadingRef = useRef(false)
   const loadingOlderRef = useRef(false)
-  const lastScrollTopRef = useRef(0)
   const isTraining = mode === 'training'
 
   const clearTypewriter = () => {
@@ -491,10 +514,11 @@ export const ChatScreen = ({ mode }) => {
     }
   }
 
-  const jumpToLatest = useCallback(() => {
-    setShowJumpToLatest(false)
+  const scrollToBottom = useCallback(() => {
     setScrollIntoView('aime-chat-bottom')
-    setTimeout(() => setScrollIntoView(''), 200)
+    setTimeout(() => setScrollIntoView(''), 260)
+    setTimeout(() => setScrollIntoView('aime-chat-bottom'), 320)
+    setTimeout(() => setScrollIntoView(''), 560)
   }, [])
 
   const interrupt = useCallback(() => {
@@ -530,8 +554,8 @@ export const ChatScreen = ({ mode }) => {
     if (!fullText) return
 
     const id = makeId()
-    setShowJumpToLatest(true)
-    setMessages((prev) => [...prev, { id, text: '', sender: 'ai', time: makeTime(reply.createdAt), streaming: true }])
+    const createdAt = reply.createdAt || new Date().toISOString()
+    setMessages((prev) => [...prev, { id, text: '', sender: 'ai', time: makeTime(createdAt), createdAt, streaming: true }])
 
     let started = false
     const begin = () => {
@@ -552,16 +576,14 @@ export const ChatScreen = ({ mode }) => {
       const list = Array.isArray(data?.messages) ? data.messages.map((item) => normalizeMessage(item, mode)) : []
       setHasMoreHistory(list.length >= HISTORY_PAGE_SIZE)
       setMessages(list.length ? list : fallbackMessages(mode))
-      setTimeout(jumpToLatest, 120)
     } catch (err) {
       console.error('[Aime] history error:', err)
       setMessages(fallbackMessages(mode))
-      setTimeout(jumpToLatest, 120)
     } finally {
       setLoading(false)
       loadingRef.current = false
     }
-  }, [jumpToLatest, mode])
+  }, [mode])
 
   const loadOlderHistory = useCallback(async () => {
     if (loadingOlderRef.current || !hasMoreHistory || !messages.length) return
@@ -591,14 +613,6 @@ export const ChatScreen = ({ mode }) => {
     }
   }, [hasMoreHistory, messages, mode])
 
-  const handleChatScroll = useCallback((event) => {
-    const nextTop = event?.detail?.scrollTop || 0
-    if (nextTop < lastScrollTopRef.current - 120) {
-      setShowJumpToLatest(true)
-    }
-    lastScrollTopRef.current = nextTop
-  }, [])
-
   useEffect(() => {
     loadHistory()
     return () => {
@@ -620,7 +634,6 @@ export const ChatScreen = ({ mode }) => {
       time: makeTime(),
       createdAt: new Date().toISOString(),
     }
-    setShowJumpToLatest(true)
     setMessages((prev) => [...prev, userMessage])
     setLoading(true)
     loadingRef.current = true
@@ -658,7 +671,6 @@ export const ChatScreen = ({ mode }) => {
       time: makeTime(),
       createdAt: new Date().toISOString(),
     }
-    setShowJumpToLatest(true)
     setMessages((prev) => [...prev, userMessage])
     setLoading(true)
     loadingRef.current = true
@@ -693,16 +705,18 @@ export const ChatScreen = ({ mode }) => {
         scrollIntoView={scrollIntoView}
         upperThreshold={80}
         onScrollToUpper={loadOlderHistory}
-        onScroll={handleChatScroll}
-        onScrollToLower={() => setShowJumpToLatest(false)}
       >
         {loadingOlder && (
           <View className='aime-history-loading'>
             <Text>正在找更早的对话...</Text>
           </View>
         )}
-        <View className='aime-date'><Text>Today</Text></View>
-        {messages.map((message) => <ChatMessage key={message.id} message={message} mode={mode} onStop={interrupt} />)}
+        {messages.map((message, index) => (
+          <Fragment key={message.id}>
+            {shouldShowMessageTime(messages, index) && <AimeTimeDivider value={makeWechatTime(message.createdAt)} />}
+            <ChatMessage message={message} mode={mode} onStop={interrupt} />
+          </Fragment>
+        ))}
         {loading && (
           <View className='aime-thinking'>
             <View className='aime-thinking-bubble'>
@@ -715,13 +729,13 @@ export const ChatScreen = ({ mode }) => {
         <View id='aime-chat-bottom' className='aime-bottom-space' />
       </ScrollView>
 
-      {showJumpToLatest && (
-        <View className='aime-jump-latest' onClick={jumpToLatest}>
-          <Text>↓</Text>
-        </View>
-      )}
-
-      <ChatInput onSendMessage={sendMessage} onSendImage={sendImage} onInterrupt={interrupt} />
+      <ChatInput
+        onSendMessage={sendMessage}
+        onSendImage={sendImage}
+        onInterrupt={interrupt}
+        onInputFocus={scrollToBottom}
+        onVoicePressStart={scrollToBottom}
+      />
     </View>
   )
 }
