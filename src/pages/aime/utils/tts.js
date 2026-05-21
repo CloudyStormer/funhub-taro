@@ -40,7 +40,7 @@ const playBuffer = (arrayBuffer, opts = {}) => {
 
       audioContext = Taro.createInnerAudioContext()
       audioContext.obeyMuteSwitch = false
-      audioContext.playbackRate = 1.08
+      audioContext.playbackRate = 1
       audioContext.src = tempPath
 
       audioContext.onCanplay(() => {
