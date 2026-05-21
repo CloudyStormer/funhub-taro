@@ -116,6 +116,7 @@ const uploadVoiceCloneAudio = ({ filePath, textId, textSegId }) =>
       formData: {
         textId,
         textSegId,
+        format: 'mp3',
         resourceName: 'aime-daily-voice',
       },
       timeout: 60000,
@@ -127,7 +128,14 @@ const uploadVoiceCloneAudio = ({ filePath, textId, textSegId }) =>
             reject(err)
           }
         } else {
-          reject(new Error(`HTTP ${res.statusCode}`))
+          let detail = ''
+          try {
+            const body = JSON.parse(res.data || '{}')
+            detail = body?.detail || body?.message || ''
+          } catch (err) {
+            detail = res.data || ''
+          }
+          reject(new Error(detail || `HTTP ${res.statusCode}`))
         }
       },
       fail: reject,
@@ -359,7 +367,7 @@ export const VoiceCloneScreen = () => {
       Taro.showToast({ title: '已提交训练', icon: 'none', duration: 2000 })
     } catch (err) {
       console.error('[AimeVoice] submit error:', err)
-      Taro.showToast({ title: '提交失败，稍后再试', icon: 'none', duration: 2000 })
+      Taro.showToast({ title: (err?.message || '提交失败，稍后再试').slice(0, 30), icon: 'none', duration: 3000 })
     } finally {
       setSubmitting(false)
     }
