@@ -1,5 +1,5 @@
 import Taro from '@tarojs/taro'
-import { isVoiceQuotaError, showVoiceQuotaToast } from '../../../utils/voiceError'
+import { isVoiceQuotaError, showVoiceQuotaToast, toVoiceErrorMessage } from '../../../utils/voiceError'
 
 const TTS_URL = 'https://api.hgshouse.com/aimebridge/tts'
 
@@ -38,23 +38,31 @@ const playBuffer = (arrayBuffer, opts = {}) => {
         Taro.setInnerAudioOption({ obeyMuteSwitch: false })
       } catch (_) {}
 
+      let notifiedPlay = false
+      const notifyPlay = () => {
+        if (notifiedPlay) return
+        notifiedPlay = true
+        opts.onPlay?.()
+      }
+
       audioContext = Taro.createInnerAudioContext()
       audioContext.obeyMuteSwitch = false
       audioContext.playbackRate = 1
       audioContext.src = tempPath
-
-      audioContext.onCanplay(() => {
+      const tryPlay = () => {
         try {
-          audioContext.play()
+          audioContext?.play()
         } catch (err) {
           console.error('[Aime TTS] play failed:', err)
-          opts.onPlay?.()
+          notifyPlay()
         }
-      })
-      audioContext.onPlay(() => opts.onPlay?.())
+      }
+
+      audioContext.onCanplay(tryPlay)
+      audioContext.onPlay(notifyPlay)
       audioContext.onError((err) => {
         console.error('[Aime TTS] audio error:', err.errCode, err.errMsg)
-        opts.onPlay?.()
+        notifyPlay()
       })
       audioContext.onEnded(() => {
         try {
@@ -62,6 +70,8 @@ const playBuffer = (arrayBuffer, opts = {}) => {
         } catch (_) {}
         audioContext = null
       })
+      setTimeout(tryPlay, 120)
+      setTimeout(notifyPlay, 1200)
     },
   })
 }
@@ -90,6 +100,12 @@ const handleTtsUnavailable = (error, opts = {}) => {
   if (isVoiceQuotaError(error)) {
     showVoiceQuotaToast(Taro)
     opts.onUnavailable?.(error)
+  } else {
+    Taro.showToast({
+      title: toVoiceErrorMessage(error, '语音暂时没出来，先看文字').slice(0, 30),
+      icon: 'none',
+      duration: 2000,
+    })
   }
   opts.onPlay?.()
 }
