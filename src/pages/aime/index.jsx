@@ -197,18 +197,8 @@ export const ChatScreen = ({ mode }) => {
   const streamingRef = useRef(null)
   const loadingRef = useRef(false)
   const loadingOlderRef = useRef(false)
-  const shouldStickToBottomRef = useRef(true)
   const lastScrollTopRef = useRef(0)
   const isTraining = mode === 'training'
-
-  useEffect(() => {
-    if (!shouldStickToBottomRef.current) return undefined
-    const t = setTimeout(() => {
-      setScrollTop((v) => v + 99999)
-      setShowJumpToLatest(false)
-    }, 60)
-    return () => clearTimeout(t)
-  }, [messages])
 
   const clearTypewriter = () => {
     if (timerRef.current) {
@@ -216,6 +206,12 @@ export const ChatScreen = ({ mode }) => {
       timerRef.current = null
     }
   }
+
+  const jumpToLatest = useCallback(() => {
+    setShowJumpToLatest(false)
+    setScrollTop((v) => v + 99999)
+    setTimeout(() => setScrollTop((v) => v + 99999), 80)
+  }, [])
 
   const interrupt = useCallback(() => {
     clearTypewriter()
@@ -250,7 +246,7 @@ export const ChatScreen = ({ mode }) => {
     if (!fullText) return
 
     const id = makeId()
-    shouldStickToBottomRef.current = true
+    setShowJumpToLatest(true)
     setMessages((prev) => [...prev, { id, text: '', sender: 'ai', time: makeTime(reply.createdAt), streaming: true }])
 
     let started = false
@@ -260,27 +256,28 @@ export const ChatScreen = ({ mode }) => {
       startTypewriter(fullText, id)
     }
 
-    speakText(fullText, { onPlay: begin })
+    speakText(fullText, { onPlay: begin, scene: isTraining ? 'training' : 'daily' })
     setTimeout(begin, 2000)
-  }, [startTypewriter])
+  }, [isTraining, startTypewriter])
 
   const loadHistory = useCallback(async () => {
     setLoading(true)
     loadingRef.current = true
-    shouldStickToBottomRef.current = true
     try {
       const data = await requestJson({ url: buildHistoryUrl(mode), method: 'GET' })
       const list = Array.isArray(data?.messages) ? data.messages.map((item) => normalizeMessage(item, mode)) : []
       setHasMoreHistory(list.length >= HISTORY_PAGE_SIZE)
       setMessages(list.length ? list : fallbackMessages(mode))
+      setTimeout(jumpToLatest, 120)
     } catch (err) {
       console.error('[Aime] history error:', err)
       setMessages(fallbackMessages(mode))
+      setTimeout(jumpToLatest, 120)
     } finally {
       setLoading(false)
       loadingRef.current = false
     }
-  }, [mode])
+  }, [jumpToLatest, mode])
 
   const loadOlderHistory = useCallback(async () => {
     if (loadingOlderRef.current || !hasMoreHistory || !messages.length) return
@@ -289,7 +286,6 @@ export const ChatScreen = ({ mode }) => {
     if (!firstCreatedAt) return
 
     loadingOlderRef.current = true
-    shouldStickToBottomRef.current = false
     setLoadingOlder(true)
 
     try {
@@ -313,16 +309,10 @@ export const ChatScreen = ({ mode }) => {
 
   const handleChatScroll = useCallback((event) => {
     const nextTop = event?.detail?.scrollTop || 0
-    if (nextTop < lastScrollTopRef.current - 80) {
+    if (nextTop < lastScrollTopRef.current - 120) {
       setShowJumpToLatest(true)
     }
     lastScrollTopRef.current = nextTop
-  }, [])
-
-  const jumpToLatest = useCallback(() => {
-    shouldStickToBottomRef.current = true
-    setShowJumpToLatest(false)
-    setScrollTop((v) => v + 99999)
   }, [])
 
   useEffect(() => {
@@ -346,7 +336,7 @@ export const ChatScreen = ({ mode }) => {
       time: makeTime(),
       createdAt: new Date().toISOString(),
     }
-    shouldStickToBottomRef.current = true
+    setShowJumpToLatest(true)
     setMessages((prev) => [...prev, userMessage])
     setLoading(true)
     loadingRef.current = true
@@ -384,7 +374,7 @@ export const ChatScreen = ({ mode }) => {
       time: makeTime(),
       createdAt: new Date().toISOString(),
     }
-    shouldStickToBottomRef.current = true
+    setShowJumpToLatest(true)
     setMessages((prev) => [...prev, userMessage])
     setLoading(true)
     loadingRef.current = true

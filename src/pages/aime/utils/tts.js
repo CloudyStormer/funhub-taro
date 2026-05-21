@@ -109,7 +109,7 @@ export const speakText = (text, opts = {}) => {
     header: { 'Content-Type': 'application/json' },
     responseType: 'arraybuffer',
     timeout: 25000,
-    data: { text: finalText },
+    data: { text: finalText, scene: opts.scene || 'default' },
     success: (res) => {
       if (res.statusCode === 200 && res.data && !isProbablyTextError(res.data)) {
         playBuffer(res.data, opts)
