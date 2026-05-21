@@ -191,7 +191,7 @@ export const ChatScreen = ({ mode }) => {
   const [loading, setLoading] = useState(false)
   const [loadingOlder, setLoadingOlder] = useState(false)
   const [hasMoreHistory, setHasMoreHistory] = useState(false)
-  const [scrollTop, setScrollTop] = useState(0)
+  const [scrollIntoView, setScrollIntoView] = useState('')
   const [showJumpToLatest, setShowJumpToLatest] = useState(false)
   const timerRef = useRef(null)
   const streamingRef = useRef(null)
@@ -209,8 +209,8 @@ export const ChatScreen = ({ mode }) => {
 
   const jumpToLatest = useCallback(() => {
     setShowJumpToLatest(false)
-    setScrollTop((v) => v + 99999)
-    setTimeout(() => setScrollTop((v) => v + 99999), 80)
+    setScrollIntoView('aime-chat-bottom')
+    setTimeout(() => setScrollIntoView(''), 200)
   }, [])
 
   const interrupt = useCallback(() => {
@@ -268,16 +268,14 @@ export const ChatScreen = ({ mode }) => {
       const list = Array.isArray(data?.messages) ? data.messages.map((item) => normalizeMessage(item, mode)) : []
       setHasMoreHistory(list.length >= HISTORY_PAGE_SIZE)
       setMessages(list.length ? list : fallbackMessages(mode))
-      setTimeout(jumpToLatest, 120)
     } catch (err) {
       console.error('[Aime] history error:', err)
       setMessages(fallbackMessages(mode))
-      setTimeout(jumpToLatest, 120)
     } finally {
       setLoading(false)
       loadingRef.current = false
     }
-  }, [jumpToLatest, mode])
+  }, [mode])
 
   const loadOlderHistory = useCallback(async () => {
     if (loadingOlderRef.current || !hasMoreHistory || !messages.length) return
@@ -406,7 +404,7 @@ export const ChatScreen = ({ mode }) => {
         scrollY
         scrollWithAnimation
         className='aime-message-list'
-        scrollTop={scrollTop}
+        scrollIntoView={scrollIntoView}
         upperThreshold={80}
         onScrollToUpper={loadOlderHistory}
         onScroll={handleChatScroll}
@@ -428,7 +426,7 @@ export const ChatScreen = ({ mode }) => {
             </View>
           </View>
         )}
-        <View className='aime-bottom-space' />
+        <View id='aime-chat-bottom' className='aime-bottom-space' />
       </ScrollView>
 
       {showJumpToLatest && (

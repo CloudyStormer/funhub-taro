@@ -25,7 +25,7 @@ const makeTime = () => {
 const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' }) => {
   const [messages, setMessages]   = useState([])
   const [isLoading, setIsLoading] = useState(false)
-  const [scrollTop, setScrollTop] = useState(0)
+  const [scrollIntoView, setScrollIntoView] = useState('')
   const [showJumpToLatest, setShowJumpToLatest] = useState(false)
 
   const sessionIdRef   = useRef('')
@@ -38,8 +38,8 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
 
   const jumpToLatest = useCallback(() => {
     setShowJumpToLatest(false)
-    setScrollTop(v => v + 99999)
-    setTimeout(() => setScrollTop(v => v + 99999), 80)
+    setScrollIntoView('english-chat-bottom')
+    setTimeout(() => setScrollIntoView(''), 200)
   }, [])
 
   const handleScroll = useCallback((event) => {
@@ -216,7 +216,7 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
         scrollY
         scrollWithAnimation
         className={styles.msgArea}
-        scrollTop={scrollTop}
+        scrollIntoView={scrollIntoView}
         onScroll={handleScroll}
         onScrollToLower={() => setShowJumpToLatest(false)}
       >
@@ -241,7 +241,7 @@ const Chat = ({ onBack, sceneTitle = '商务英语', words = [], level = 'B1' })
           </View>
         )}
 
-        <View style={{ height: '24px' }} />
+        <View id='english-chat-bottom' style={{ height: '24px' }} />
       </ScrollView>
 
       {showJumpToLatest && (
